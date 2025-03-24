@@ -106,3 +106,20 @@
     @apply hover:shadow-lg hover:-translate-y-1 transition-all duration-300;
   }
 }
+
+/* Updated animation styles to keep content visible */
+@keyframes fade-in {
+  0% {
+    opacity: 0.3;
+    transform: translateY(10px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.8s ease-out forwards;
+  opacity: 1; /* Ensure elements remain visible even after animation */
+}
