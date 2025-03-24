@@ -24,10 +24,6 @@ const Hero = () => {
         </div>
 
         <div className="max-w-3xl mx-auto text-center mb-16">
-          <span className="inline-block px-4 py-1.5 mb-6 text-sm font-medium bg-volt-red/10 text-volt-red rounded-full">
-            ⚡ Powered by Eindhoven University of Technology
-          </span>
-          
           <h1 className="heading-xl mb-6 animate-fade-in">
             <span className="text-volt-dark">Electrifying Consulting.</span>
             <br />
