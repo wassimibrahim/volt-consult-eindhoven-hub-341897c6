@@ -37,7 +37,7 @@ const ContactSection = () => {
       <div className="container-custom">
         <div className="grid md:grid-cols-2 gap-12">
           <div>
-            <span className="inline-block px-4 py-1.5 mb-2 text-sm font-medium bg-volt-blue/10 text-volt-blue rounded-full">
+            <span className="inline-block px-4 py-1.5 mb-2 text-sm font-medium bg-volt-red/10 text-volt-red rounded-full">
               Contact Us
             </span>
             
@@ -51,7 +51,7 @@ const ContactSection = () => {
             
             <div className="space-y-6">
               <div className="flex items-start gap-4">
-                <div className="w-10 h-10 rounded-full bg-volt-blue/10 flex items-center justify-center text-volt-blue flex-shrink-0">
+                <div className="w-10 h-10 rounded-full bg-volt-red/10 flex items-center justify-center text-volt-red flex-shrink-0">
                   <Mail size={20} />
                 </div>
                 <div>
@@ -61,7 +61,7 @@ const ContactSection = () => {
               </div>
               
               <div className="flex items-start gap-4">
-                <div className="w-10 h-10 rounded-full bg-volt-blue/10 flex items-center justify-center text-volt-blue flex-shrink-0">
+                <div className="w-10 h-10 rounded-full bg-volt-red/10 flex items-center justify-center text-volt-red flex-shrink-0">
                   <MapPin size={20} />
                 </div>
                 <div>
@@ -71,7 +71,7 @@ const ContactSection = () => {
               </div>
               
               <div className="flex items-start gap-4">
-                <div className="w-10 h-10 rounded-full bg-volt-blue/10 flex items-center justify-center text-volt-blue flex-shrink-0">
+                <div className="w-10 h-10 rounded-full bg-volt-red/10 flex items-center justify-center text-volt-red flex-shrink-0">
                   <Phone size={20} />
                 </div>
                 <div>
@@ -89,9 +89,9 @@ const ContactSection = () => {
                   { event: "Recruitment Cycle Opens", date: "October 1, 2023" },
                   { event: "Workshop Series", date: "October 20, 2023" }
                 ].map((item, idx) => (
-                  <div key={idx} className="flex justify-between items-center py-2 border-b border-volt-blue/10">
+                  <div key={idx} className="flex justify-between items-center py-2 border-b border-volt-red/10">
                     <span className="font-medium">{item.event}</span>
-                    <span className="text-volt-blue">{item.date}</span>
+                    <span className="text-volt-red">{item.date}</span>
                   </div>
                 ))}
               </div>
@@ -113,7 +113,7 @@ const ContactSection = () => {
                     name="name"
                     value={formData.name}
                     onChange={handleChange}
-                    className="w-full px-4 py-3 rounded-md border border-volt-gray focus:border-volt-blue focus:outline-none transition-colors"
+                    className="w-full px-4 py-3 rounded-md border border-volt-gray focus:border-volt-red focus:outline-none transition-colors"
                     placeholder="John Doe"
                     required
                   />
@@ -129,7 +129,7 @@ const ContactSection = () => {
                     name="email"
                     value={formData.email}
                     onChange={handleChange}
-                    className="w-full px-4 py-3 rounded-md border border-volt-gray focus:border-volt-blue focus:outline-none transition-colors"
+                    className="w-full px-4 py-3 rounded-md border border-volt-gray focus:border-volt-red focus:outline-none transition-colors"
                     placeholder="john@example.com"
                     required
                   />
@@ -145,7 +145,7 @@ const ContactSection = () => {
                     name="organization"
                     value={formData.organization}
                     onChange={handleChange}
-                    className="w-full px-4 py-3 rounded-md border border-volt-gray focus:border-volt-blue focus:outline-none transition-colors"
+                    className="w-full px-4 py-3 rounded-md border border-volt-gray focus:border-volt-red focus:outline-none transition-colors"
                     placeholder="Your company or institution"
                   />
                 </div>
@@ -160,7 +160,7 @@ const ContactSection = () => {
                     value={formData.message}
                     onChange={handleChange}
                     rows={4}
-                    className="w-full px-4 py-3 rounded-md border border-volt-gray focus:border-volt-blue focus:outline-none transition-colors resize-none"
+                    className="w-full px-4 py-3 rounded-md border border-volt-gray focus:border-volt-red focus:outline-none transition-colors resize-none"
                     placeholder="How can we help you?"
                     required
                   ></textarea>

@@ -27,12 +27,12 @@ const Hero = () => {
   }, []);
 
   return (
-    <section className="pt-32 pb-20 md:pt-40 md:pb-32 bg-gradient-to-br from-white to-volt-lightBlue relative overflow-hidden">
+    <section className="pt-32 pb-20 md:pt-40 md:pb-32 bg-gradient-to-br from-white to-volt-lightRed relative overflow-hidden">
       <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1581091226825-a6a2a5aee158')] bg-cover bg-center opacity-5"></div>
       
       <div className="container-custom relative">
         <div className="max-w-3xl mx-auto text-center">
-          <span className="inline-block px-4 py-1.5 mb-6 text-sm font-medium bg-volt-blue/10 text-volt-blue rounded-full">
+          <span className="inline-block px-4 py-1.5 mb-6 text-sm font-medium bg-volt-red/10 text-volt-red rounded-full">
             ⚡ Powered by Eindhoven University of Technology
           </span>
           
@@ -43,7 +43,7 @@ const Hero = () => {
           >
             <span className="text-volt-dark">Electrifying Consulting.</span>
             <br />
-            <span className="text-volt-blue">Strategic Impact.</span>
+            <span className="text-volt-red">Strategic Impact.</span>
           </h1>
           
           <p 

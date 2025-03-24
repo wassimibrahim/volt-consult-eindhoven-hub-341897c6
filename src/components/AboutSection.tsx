@@ -7,7 +7,7 @@ const AboutSection = () => {
       <div className="container-custom">
         <div className="grid md:grid-cols-2 gap-12 items-center">
           <div className="space-y-6">
-            <span className="inline-block px-4 py-1.5 mb-2 text-sm font-medium bg-volt-blue/10 text-volt-blue rounded-full">
+            <span className="inline-block px-4 py-1.5 mb-2 text-sm font-medium bg-volt-red/10 text-volt-red rounded-full">
               About Us
             </span>
             
@@ -41,7 +41,7 @@ const AboutSection = () => {
                   }
                 ].map((value, index) => (
                   <div key={index} className="p-4 rounded-lg border border-volt-gray bg-white shadow-sm card-hover">
-                    <h4 className="font-semibold mb-2 text-volt-blue">{value.title}</h4>
+                    <h4 className="font-semibold mb-2 text-volt-red">{value.title}</h4>
                     <p className="text-sm text-volt-text/80">{value.desc}</p>
                   </div>
                 ))}
@@ -56,11 +56,18 @@ const AboutSection = () => {
                 alt="Students collaborating on a project"
                 className="object-cover w-full h-full"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-volt-blue/30 to-transparent"></div>
+              <div className="absolute inset-0 bg-gradient-to-t from-volt-red/30 to-transparent"></div>
             </div>
             
             <div className="absolute bottom-8 right-8 p-6 bg-white rounded-xl shadow-lg max-w-xs">
-              <h3 className="text-xl font-semibold mb-2 text-volt-dark">World's First</h3>
+              <div className="flex items-center gap-2 mb-2">
+                <img 
+                  src="/lovable-uploads/4062c0cb-8a1c-48cc-83e9-a22f371228fe.png" 
+                  alt="Volt Logo" 
+                  className="h-6"
+                />
+                <h3 className="text-xl font-semibold text-volt-dark">World's First</h3>
+              </div>
               <p className="text-volt-text/80">
                 Volt Consulting Group proudly stands as the first student-run tech consultancy firm in the world.
               </p>

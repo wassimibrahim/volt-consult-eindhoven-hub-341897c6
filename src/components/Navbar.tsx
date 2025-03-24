@@ -28,10 +28,11 @@ const Navbar = () => {
     >
       <div className="container-custom flex items-center justify-between">
         <Link to="/" className="flex items-center gap-2">
-          <span className="text-volt-blue text-3xl font-bold">⚡</span>
-          <span className="text-xl font-bold text-volt-dark">
-            Volt <span className="text-volt-blue">Consulting</span>
-          </span>
+          <img 
+            src="/lovable-uploads/f8cdff2f-6d3c-4728-9089-4ec88f279285.png" 
+            alt="Volt Consulting Group Logo" 
+            className="h-10"
+          />
         </Link>
 
         {/* Desktop Navigation */}
@@ -66,7 +67,7 @@ const Navbar = () => {
               <MobileNavLink href="#partners" onClick={toggleMenu}>Partners</MobileNavLink>
               <Link 
                 to="/contact" 
-                className="mx-4 mt-4 py-3 px-4 bg-volt-blue text-white text-center rounded-md"
+                className="mx-4 mt-4 py-3 px-4 bg-volt-red text-white text-center rounded-md"
                 onClick={toggleMenu}
               >
                 Contact Us
@@ -82,7 +83,7 @@ const Navbar = () => {
 const NavLink = ({ href, children }: { href: string; children: React.ReactNode }) => (
   <a 
     href={href} 
-    className="text-volt-dark hover:text-volt-blue transition-colors relative after:absolute after:bottom-0 after:left-0 after:h-0.5 after:w-0 after:bg-volt-blue after:transition-all hover:after:w-full"
+    className="text-volt-dark hover:text-volt-red transition-colors relative after:absolute after:bottom-0 after:left-0 after:h-0.5 after:w-0 after:bg-volt-red after:transition-all hover:after:w-full"
   >
     {children}
   </a>

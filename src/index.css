@@ -16,7 +16,7 @@
     --popover: 0 0% 100%;
     --popover-foreground: 240 10% 3.9%;
 
-    --primary: 221 100% 50%;
+    --primary: 0 100% 45%;
     --primary-foreground: 0 0% 98%;
 
     --secondary: 240 5.9% 10%;
@@ -33,7 +33,7 @@
 
     --border: 240 5.9% 90%;
     --input: 240 5.9% 90%;
-    --ring: 221 100% 50%;
+    --ring: 0 100% 45%;
 
     --radius: 0.5rem;
   }
@@ -57,11 +57,11 @@
   }
 
   ::-webkit-scrollbar-thumb {
-    @apply bg-volt-blue/30 rounded-full transition-colors;
+    @apply bg-volt-red/30 rounded-full transition-colors;
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    @apply bg-volt-blue/50;
+    @apply bg-volt-red/50;
   }
 }
 
@@ -95,11 +95,11 @@
   }
 
   .button-primary {
-    @apply px-6 py-3 bg-volt-blue text-white rounded-md font-medium hover:bg-volt-blue/90 transition-colors duration-300 shadow-md hover:shadow-lg;
+    @apply px-6 py-3 bg-volt-red text-white rounded-md font-medium hover:bg-volt-red/90 transition-colors duration-300 shadow-md hover:shadow-lg;
   }
 
   .button-secondary {
-    @apply px-6 py-3 bg-transparent border border-volt-blue text-volt-blue rounded-md font-medium hover:bg-volt-blue/5 transition-colors duration-300;
+    @apply px-6 py-3 bg-transparent border border-volt-red text-volt-red rounded-md font-medium hover:bg-volt-red/5 transition-colors duration-300;
   }
 
   .card-hover {

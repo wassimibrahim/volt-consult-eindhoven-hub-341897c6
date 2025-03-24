@@ -8,7 +8,7 @@ const ClientsSection = () => {
     <section id="for-clients" className="section-padding bg-white">
       <div className="container-custom">
         <div className="text-center max-w-3xl mx-auto mb-16">
-          <span className="inline-block px-4 py-1.5 mb-2 text-sm font-medium bg-volt-blue/10 text-volt-blue rounded-full">
+          <span className="inline-block px-4 py-1.5 mb-2 text-sm font-medium bg-volt-red/10 text-volt-red rounded-full">
             For Clients
           </span>
           
@@ -28,24 +28,24 @@ const ClientsSection = () => {
             <div className="space-y-6">
               {[
                 {
-                  icon: <Flag className="text-volt-blue" size={24} />,
+                  icon: <Flag className="text-volt-red" size={24} />,
                   title: "Initial Consultation & Project Definition",
                   desc: "We discuss your organization's challenges, goals, and strategic objectives."
                 },
                 {
-                  icon: <Clock className="text-volt-blue" size={24} />,
+                  icon: <Clock className="text-volt-red" size={24} />,
                   title: "Team Formation & Kick-Off",
                   desc: "We assemble an interdisciplinary team of motivated student consultants matched to your project's requirements."
                 },
                 {
-                  icon: <Check className="text-volt-blue" size={24} />,
+                  icon: <Check className="text-volt-red" size={24} />,
                   title: "Final Recommendations & Presentation",
                   desc: "We deliver comprehensive, actionable insights and recommendations via a structured final presentation."
                 }
               ].map((step, index) => (
                 <div key={index} className="flex gap-4">
                   <div className="flex-shrink-0 mt-1">
-                    <div className="w-10 h-10 rounded-full bg-volt-blue/10 flex items-center justify-center">
+                    <div className="w-10 h-10 rounded-full bg-volt-red/10 flex items-center justify-center">
                       {step.icon}
                     </div>
                   </div>
@@ -85,7 +85,7 @@ const ClientsSection = () => {
                 ))}
               </div>
               
-              <div className="mt-8 p-6 bg-volt-blue rounded-xl text-white">
+              <div className="mt-8 p-6 bg-volt-red rounded-xl text-white">
                 <h4 className="font-semibold text-xl mb-3">Interested in Partnering?</h4>
                 <p className="text-white/80 mb-4">
                   Reach out to us to discuss how Volt Consulting Group can enhance your organization's success and impact through strategic partnerships.

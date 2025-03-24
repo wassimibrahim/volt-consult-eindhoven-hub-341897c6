@@ -10,10 +10,11 @@ const Footer = () => {
         <div className="grid md:grid-cols-4 gap-8 mb-12">
           <div>
             <Link to="/" className="flex items-center gap-2 mb-4">
-              <span className="text-volt-blue text-3xl font-bold">⚡</span>
-              <span className="text-xl font-bold text-white">
-                Volt <span className="text-volt-blue">Consulting</span>
-              </span>
+              <img 
+                src="/lovable-uploads/aa6fe717-e75b-4bec-a88b-4b491bd55190.png" 
+                alt="Volt Consulting Group Logo" 
+                className="h-12"
+              />
             </Link>
             
             <p className="text-white/70 mb-6">
@@ -25,7 +26,7 @@ const Footer = () => {
                 href="https://linkedin.com" 
                 target="_blank" 
                 rel="noopener noreferrer"
-                className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-volt-blue transition-colors"
+                className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-volt-red transition-colors"
                 aria-label="LinkedIn"
               >
                 <Linkedin size={18} />
@@ -34,7 +35,7 @@ const Footer = () => {
                 href="https://instagram.com" 
                 target="_blank" 
                 rel="noopener noreferrer"
-                className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-volt-blue transition-colors"
+                className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-volt-red transition-colors"
                 aria-label="Instagram"
               >
                 <Instagram size={18} />
@@ -43,7 +44,7 @@ const Footer = () => {
                 href="https://twitter.com" 
                 target="_blank" 
                 rel="noopener noreferrer"
-                className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-volt-blue transition-colors"
+                className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-volt-red transition-colors"
                 aria-label="Twitter"
               >
                 <Twitter size={18} />
@@ -89,7 +90,7 @@ const Footer = () => {
                 </li>
               ))}
             </ul>
-            <a href="/events" className="inline-block mt-4 text-volt-blue hover:underline">
+            <a href="/events" className="inline-block mt-4 text-volt-red hover:underline">
               View All Upcoming Dates →
             </a>
           </div>
@@ -114,7 +115,7 @@ const Footer = () => {
                 </a>
               </li>
             </ul>
-            <Link to="/contact" className="inline-block mt-4 text-volt-blue hover:underline">
+            <Link to="/contact" className="inline-block mt-4 text-volt-red hover:underline">
               Contact Form →
             </Link>
           </div>
