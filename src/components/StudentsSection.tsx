@@ -43,7 +43,7 @@ const benefits = [
 
 const StudentsSection = () => {
   return (
-    <section id="for-students" className="section-padding bg-volt-blue text-white">
+    <section id="for-students" className="section-padding bg-volt-red text-white">
       <div className="container-custom">
         <div className="text-center max-w-3xl mx-auto mb-16">
           <span className="inline-block px-4 py-1.5 mb-2 text-sm font-medium bg-white/20 text-white rounded-full">
@@ -91,7 +91,7 @@ const StudentsSection = () => {
                   "Kick-Off & Onboarding"
                 ].map((step, idx) => (
                   <div key={idx} className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-volt-blue flex items-center justify-center text-white font-bold text-sm">
+                    <div className="w-8 h-8 rounded-full bg-volt-red flex items-center justify-center text-white font-bold text-sm">
                       {idx + 1}
                     </div>
                     <p className="font-medium">{step}</p>
@@ -118,7 +118,7 @@ const StudentsSection = () => {
                   ].map((trait, idx) => (
                     <li key={idx} className="flex items-start gap-3">
                       <div className="mt-1 flex-shrink-0">
-                        <div className="w-5 h-5 rounded-full bg-volt-blue flex items-center justify-center">
+                        <div className="w-5 h-5 rounded-full bg-volt-red flex items-center justify-center">
                           <svg width="10" height="8" viewBox="0 0 10 8" fill="none" xmlns="http://www.w3.org/2000/svg">
                             <path d="M1 4L3.5 6.5L9 1" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                           </svg>
