@@ -25,7 +25,7 @@ const ServicesSection = () => {
     <section id="services" className="section-padding bg-volt-gray">
       <div className="container-custom">
         <div className="text-center max-w-3xl mx-auto mb-16">
-          <span className="inline-block px-4 py-1.5 mb-2 text-sm font-medium bg-volt-red/10 text-volt-red rounded-full">
+          <span className="inline-block px-4 py-1.5 mb-2 text-sm font-medium bg-[#ff0000]/10 text-[#ff0000] rounded-full">
             Our Services
           </span>
           
@@ -44,14 +44,14 @@ const ServicesSection = () => {
               key={index}
               className="bg-white rounded-xl shadow-md p-8 hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
             >
-              <div className="text-volt-red mb-5">{service.icon}</div>
+              <div className="text-[#ff0000] mb-5">{service.icon}</div>
               <h3 className="heading-sm mb-4 text-volt-dark">{service.title}</h3>
               <p className="text-volt-text/80">{service.description}</p>
             </div>
           ))}
         </div>
         
-        <div className="mt-16 bg-volt-red rounded-xl text-white p-8 md:p-12">
+        <div className="mt-16 bg-[#ff0000] rounded-xl text-white p-8 md:p-12">
           <div className="grid md:grid-cols-2 gap-8 items-center">
             <div>
               <h3 className="heading-md mb-4">Our Core Consulting Areas</h3>

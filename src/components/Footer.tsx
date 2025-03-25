@@ -11,9 +11,9 @@ const Footer = () => {
           <div>
             <Link to="/" className="flex items-center gap-2 mb-4">
               <img 
-                src="/lovable-uploads/aa6fe717-e75b-4bec-a88b-4b491bd55190.png" 
+                src="/lovable-uploads/6cb04b1c-9231-4ecd-9237-56d9dce2e783.png" 
                 alt="Volt Consulting Group Logo" 
-                className="h-12"
+                className="h-16"
               />
             </Link>
             
@@ -26,7 +26,7 @@ const Footer = () => {
                 href="https://linkedin.com" 
                 target="_blank" 
                 rel="noopener noreferrer"
-                className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-volt-red transition-colors"
+                className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-[#ff0000] transition-colors"
                 aria-label="LinkedIn"
               >
                 <Linkedin size={18} />
@@ -35,7 +35,7 @@ const Footer = () => {
                 href="https://instagram.com" 
                 target="_blank" 
                 rel="noopener noreferrer"
-                className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-volt-red transition-colors"
+                className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-[#ff0000] transition-colors"
                 aria-label="Instagram"
               >
                 <Instagram size={18} />
@@ -44,7 +44,7 @@ const Footer = () => {
                 href="https://twitter.com" 
                 target="_blank" 
                 rel="noopener noreferrer"
-                className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-volt-red transition-colors"
+                className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-[#ff0000] transition-colors"
                 aria-label="Twitter"
               >
                 <Twitter size={18} />
@@ -57,20 +57,20 @@ const Footer = () => {
             <ul className="space-y-3">
               {[
                 { text: "Home", url: "/" },
-                { text: "About Us", url: "/#about" },
-                { text: "Services", url: "/#services" },
-                { text: "For Clients", url: "/#for-clients" },
-                { text: "For Students", url: "/#for-students" },
-                { text: "Partners", url: "/#partners" },
+                { text: "About Us", url: "/about" },
+                { text: "Services", url: "/for-clients" },
+                { text: "For Clients", url: "/for-clients" },
+                { text: "For Students", url: "/for-students" },
+                { text: "Partners", url: "/partners" },
                 { text: "Contact", url: "/contact" }
               ].map((link, idx) => (
                 <li key={idx}>
-                  <a 
-                    href={link.url} 
+                  <Link 
+                    to={link.url}
                     className="text-white/70 hover:text-white transition-colors"
                   >
                     {link.text}
-                  </a>
+                  </Link>
                 </li>
               ))}
             </ul>
@@ -90,9 +90,9 @@ const Footer = () => {
                 </li>
               ))}
             </ul>
-            <a href="/events" className="inline-block mt-4 text-volt-red hover:underline">
+            <Link to="/events" className="inline-block mt-4 text-[#ff0000] hover:underline">
               View All Upcoming Dates →
-            </a>
+            </Link>
           </div>
           
           <div>
@@ -115,7 +115,7 @@ const Footer = () => {
                 </a>
               </li>
             </ul>
-            <Link to="/contact" className="inline-block mt-4 text-volt-red hover:underline">
+            <Link to="/contact" className="inline-block mt-4 text-[#ff0000] hover:underline">
               Contact Form →
             </Link>
           </div>

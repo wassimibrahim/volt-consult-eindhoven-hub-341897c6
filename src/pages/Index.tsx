@@ -2,12 +2,6 @@
 import React, { useEffect } from 'react';
 import Navbar from '../components/Navbar';
 import Hero from '../components/Hero';
-import AboutSection from '../components/AboutSection';
-import ServicesSection from '../components/ServicesSection';
-import ClientsSection from '../components/ClientsSection';
-import StudentsSection from '../components/StudentsSection';
-import PartnersSection from '../components/PartnersSection';
-import ContactSection from '../components/ContactSection';
 import Footer from '../components/Footer';
 
 const Index = () => {
@@ -41,12 +35,6 @@ const Index = () => {
     <div className="min-h-screen bg-white">
       <Navbar />
       <Hero />
-      <AboutSection />
-      <ServicesSection />
-      <ClientsSection />
-      <StudentsSection />
-      <PartnersSection />
-      <ContactSection />
       <Footer />
     </div>
   );

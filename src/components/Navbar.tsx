@@ -29,19 +29,18 @@ const Navbar = () => {
       <div className="container-custom flex items-center justify-between">
         <Link to="/" className="flex items-center gap-2">
           <img 
-            src="/lovable-uploads/f8cdff2f-6d3c-4728-9089-4ec88f279285.png" 
+            src="/lovable-uploads/6cb04b1c-9231-4ecd-9237-56d9dce2e783.png" 
             alt="Volt Consulting Group Logo" 
-            className="h-10"
+            className="h-12"
           />
         </Link>
 
         {/* Desktop Navigation */}
         <nav className="hidden md:flex items-center gap-8">
-          <NavLink href="#about">About</NavLink>
-          <NavLink href="#services">Services</NavLink>
-          <NavLink href="#for-clients">For Clients</NavLink>
-          <NavLink href="#for-students">For Students</NavLink>
-          <NavLink href="#partners">Partners</NavLink>
+          <NavLink href="/about">About</NavLink>
+          <NavLink href="/for-clients">For Clients</NavLink>
+          <NavLink href="/for-students">For Students</NavLink>
+          <NavLink href="/partners">Partners</NavLink>
           <Link to="/contact" className="button-primary">
             Contact Us
           </Link>
@@ -60,14 +59,13 @@ const Navbar = () => {
         {isMenuOpen && (
           <div className="absolute top-full left-0 right-0 bg-white shadow-lg md:hidden animate-slide-in-top">
             <nav className="flex flex-col py-4">
-              <MobileNavLink href="#about" onClick={toggleMenu}>About</MobileNavLink>
-              <MobileNavLink href="#services" onClick={toggleMenu}>Services</MobileNavLink>
-              <MobileNavLink href="#for-clients" onClick={toggleMenu}>For Clients</MobileNavLink>
-              <MobileNavLink href="#for-students" onClick={toggleMenu}>For Students</MobileNavLink>
-              <MobileNavLink href="#partners" onClick={toggleMenu}>Partners</MobileNavLink>
+              <MobileNavLink href="/about" onClick={toggleMenu}>About</MobileNavLink>
+              <MobileNavLink href="/for-clients" onClick={toggleMenu}>For Clients</MobileNavLink>
+              <MobileNavLink href="/for-students" onClick={toggleMenu}>For Students</MobileNavLink>
+              <MobileNavLink href="/partners" onClick={toggleMenu}>Partners</MobileNavLink>
               <Link 
                 to="/contact" 
-                className="mx-4 mt-4 py-3 px-4 bg-volt-red text-white text-center rounded-md"
+                className="mx-4 mt-4 py-3 px-4 bg-[#ff0000] text-white text-center rounded-md"
                 onClick={toggleMenu}
               >
                 Contact Us
@@ -81,12 +79,12 @@ const Navbar = () => {
 };
 
 const NavLink = ({ href, children }: { href: string; children: React.ReactNode }) => (
-  <a 
-    href={href} 
-    className="text-volt-dark hover:text-volt-red transition-colors relative after:absolute after:bottom-0 after:left-0 after:h-0.5 after:w-0 after:bg-volt-red after:transition-all hover:after:w-full"
+  <Link 
+    to={href} 
+    className="text-volt-dark hover:text-[#ff0000] transition-colors relative after:absolute after:bottom-0 after:left-0 after:h-0.5 after:w-0 after:bg-[#ff0000] after:transition-all hover:after:w-full"
   >
     {children}
-  </a>
+  </Link>
 );
 
 const MobileNavLink = ({ 
@@ -98,13 +96,13 @@ const MobileNavLink = ({
   children: React.ReactNode;
   onClick: () => void;
 }) => (
-  <a 
-    href={href} 
+  <Link 
+    to={href} 
     className="px-4 py-3 text-volt-dark hover:bg-volt-gray transition-colors"
     onClick={onClick}
   >
     {children}
-  </a>
+  </Link>
 );
 
 export default Navbar;
