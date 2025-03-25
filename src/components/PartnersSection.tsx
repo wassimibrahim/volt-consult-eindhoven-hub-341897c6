@@ -59,10 +59,10 @@ const PartnersSection = () => {
           </div>
         </div>
         
-        <div className="bg-volt-blue rounded-xl p-8 md:p-12 text-white">
+        <div className="bg-volt-blue rounded-xl p-8 md:p-12">
           <div className="grid md:grid-cols-2 gap-8 items-center">
             <div>
-              <h3 className="heading-md mb-6">Your Benefits</h3>
+              <h3 className="heading-md mb-6 text-black">Your Benefits</h3>
               <div className="space-y-4">
                 {[
                   {
@@ -79,8 +79,8 @@ const PartnersSection = () => {
                   }
                 ].map((benefit, idx) => (
                   <div key={idx} className="bg-white/10 rounded-lg p-5 hover:bg-white/15 transition-colors">
-                    <h4 className="font-semibold text-lg mb-2">{benefit.title}</h4>
-                    <p className="text-white/80 text-sm">{benefit.desc}</p>
+                    <h4 className="font-semibold text-lg mb-2 text-black">{benefit.title}</h4>
+                    <p className="text-black text-sm">{benefit.desc}</p>
                   </div>
                 ))}
               </div>
