@@ -11,9 +11,9 @@ const Footer = () => {
           <div>
             <Link to="/" className="flex items-center gap-2 mb-4">
               <img 
-                src="/lovable-uploads/6cb04b1c-9231-4ecd-9237-56d9dce2e783.png" 
+                src="/lovable-uploads/bb3ce8b3-7469-4a8a-a6c5-9cf51ca7a758.png" 
                 alt="Volt Consulting Group Logo" 
-                className="h-16"
+                className="h-16 invert"
               />
             </Link>
             
@@ -61,7 +61,7 @@ const Footer = () => {
                 { text: "Services", url: "/for-clients" },
                 { text: "For Clients", url: "/for-clients" },
                 { text: "For Students", url: "/for-students" },
-                { text: "Partners", url: "/partners" },
+                { text: "For Partners", url: "/for-partners" },
                 { text: "Contact", url: "/contact" }
               ].map((link, idx) => (
                 <li key={idx}>

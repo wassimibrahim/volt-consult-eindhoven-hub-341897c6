@@ -25,7 +25,8 @@ const App = () => (
           <Route path="/about" element={<AboutPage />} />
           <Route path="/for-students" element={<ForStudentsPage />} />
           <Route path="/for-clients" element={<ForClientsPage />} />
-          <Route path="/partners" element={<PartnersPage />} />
+          <Route path="/for-partners" element={<PartnersPage />} />
+          <Route path="/partners" element={<PartnersPage />} /> {/* Keep this for backward compatibility */}
           <Route path="/contact" element={<ContactPage />} />
           {/* Catch-all route */}
           <Route path="*" element={<NotFound />} />

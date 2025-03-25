@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, Zap, Globe, MapPin } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const Hero = () => {
@@ -12,13 +12,13 @@ const Hero = () => {
         {/* Logo and Company Name */}
         <div className="flex items-center justify-center mb-12">
           <img 
-            src="/lovable-uploads/6cb04b1c-9231-4ecd-9237-56d9dce2e783.png" 
+            src="/lovable-uploads/bb3ce8b3-7469-4a8a-a6c5-9cf51ca7a758.png" 
             alt="Volt Consulting Group Logo" 
             className="h-32 md:h-40"
           />
           <div className="ml-4 text-center md:text-left">
             <h2 className="text-3xl md:text-4xl font-bold">
-              <span className="text-[#ff0000]">VOLT</span> <span className="text-volt-dark">CONSULTING GROUP</span>
+              <span className="text-[#ff0000] font-bold">VOLT</span> <span className="text-volt-dark">CONSULTING GROUP</span>
             </h2>
           </div>
         </div>
@@ -48,7 +48,9 @@ const Hero = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-12">
           {/* Banner 1 */}
           <div className="bg-white/90 p-6 rounded-lg shadow-md hover:shadow-lg transition-all border-l-4 border-[#ff0000]">
-            <div className="mb-3 text-[#ff0000] text-2xl">⚡</div>
+            <div className="mb-3 text-[#ff0000]">
+              <Zap size={24} />
+            </div>
             <h3 className="text-xl font-bold mb-3 text-volt-dark">Powered by Eindhoven University of Technology</h3>
             <p className="text-volt-text">
               As part of Eindhoven University of Technology, we connect top academic talent directly with industry leaders. Leveraging the university's exceptional resources and innovative expertise, we deliver creative, impactful, and technology-driven solutions across Eindhoven—the City of Light.
@@ -57,7 +59,9 @@ const Hero = () => {
 
           {/* Banner 2 */}
           <div className="bg-white/90 p-6 rounded-lg shadow-md hover:shadow-lg transition-all border-l-4 border-[#ff0000]">
-            <div className="mb-3 text-[#ff0000] text-2xl">🌐</div>
+            <div className="mb-3 text-[#ff0000]">
+              <Globe size={24} />
+            </div>
             <h3 className="text-xl font-bold mb-3 text-volt-dark">World's First Student-Run Tech Consultancy Firm</h3>
             <p className="text-volt-text">
               Volt Consulting Group proudly stands as the first student-run tech consultancy firm in the world, dedicated exclusively to strategic and technological impact. With bold ambitions to expand our presence to every major technical university globally, our mission is clear: to create lasting value, abundant growth, and enhanced resilience for organizations across the Brainport region and beyond.
@@ -66,7 +70,9 @@ const Hero = () => {
 
           {/* Banner 3 */}
           <div className="bg-white/90 p-6 rounded-lg shadow-md hover:shadow-lg transition-all border-l-4 border-[#ff0000]">
-            <div className="mb-3 text-[#ff0000] text-2xl">📍</div>
+            <div className="mb-3 text-[#ff0000]">
+              <MapPin size={24} />
+            </div>
             <h3 className="text-xl font-bold mb-3 text-volt-dark">At the Heart of the Brainport Region</h3>
             <p className="text-volt-text">
               Situated at the epicenter of technological innovation, Volt Consulting Group drives impact through technology and strategic insight. Our proximity to over 5,000 tech and IT firms and the High Tech Campus empowers us to build meaningful partnerships, foster innovation, and generate measurable social impact in one of Europe's most vibrant tech ecosystems.

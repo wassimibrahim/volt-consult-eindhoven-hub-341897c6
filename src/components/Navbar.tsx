@@ -29,10 +29,15 @@ const Navbar = () => {
       <div className="container-custom flex items-center justify-between">
         <Link to="/" className="flex items-center gap-2">
           <img 
-            src="/lovable-uploads/6cb04b1c-9231-4ecd-9237-56d9dce2e783.png" 
+            src="/lovable-uploads/bb3ce8b3-7469-4a8a-a6c5-9cf51ca7a758.png" 
             alt="Volt Consulting Group Logo" 
             className="h-12"
           />
+          <div className="hidden md:block">
+            <h2 className="text-xl font-bold">
+              <span className="text-[#ff0000] font-bold">VOLT</span> <span className="text-volt-dark">CONSULTING GROUP</span>
+            </h2>
+          </div>
         </Link>
 
         {/* Desktop Navigation */}
@@ -40,7 +45,7 @@ const Navbar = () => {
           <NavLink href="/about">About</NavLink>
           <NavLink href="/for-clients">For Clients</NavLink>
           <NavLink href="/for-students">For Students</NavLink>
-          <NavLink href="/partners">Partners</NavLink>
+          <NavLink href="/for-partners">For Partners</NavLink>
           <Link to="/contact" className="button-primary">
             Contact Us
           </Link>
@@ -62,7 +67,7 @@ const Navbar = () => {
               <MobileNavLink href="/about" onClick={toggleMenu}>About</MobileNavLink>
               <MobileNavLink href="/for-clients" onClick={toggleMenu}>For Clients</MobileNavLink>
               <MobileNavLink href="/for-students" onClick={toggleMenu}>For Students</MobileNavLink>
-              <MobileNavLink href="/partners" onClick={toggleMenu}>Partners</MobileNavLink>
+              <MobileNavLink href="/for-partners" onClick={toggleMenu}>For Partners</MobileNavLink>
               <Link 
                 to="/contact" 
                 className="mx-4 mt-4 py-3 px-4 bg-[#ff0000] text-white text-center rounded-md"
