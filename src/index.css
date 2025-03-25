@@ -16,7 +16,7 @@
     --popover: 0 0% 100%;
     --popover-foreground: 240 10% 3.9%;
 
-    --primary: 0 100% 50%;
+    --primary: 350 84% 44%;
     --primary-foreground: 0 0% 98%;
 
     --secondary: 240 5.9% 10%;
@@ -33,7 +33,7 @@
 
     --border: 240 5.9% 90%;
     --input: 240 5.9% 90%;
-    --ring: 0 100% 50%;
+    --ring: 350 84% 44%;
 
     --radius: 0.5rem;
   }
@@ -57,11 +57,11 @@
   }
 
   ::-webkit-scrollbar-thumb {
-    @apply bg-[#ff0000]/30 rounded-full transition-colors;
+    @apply bg-[#CC112F]/30 rounded-full transition-colors;
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    @apply bg-[#ff0000]/50;
+    @apply bg-[#CC112F]/50;
   }
 }
 
@@ -95,11 +95,11 @@
   }
 
   .button-primary {
-    @apply px-6 py-3 bg-[#ff0000] text-white rounded-md font-medium hover:bg-[#ff0000]/90 transition-colors duration-300 shadow-md hover:shadow-lg;
+    @apply px-6 py-3 bg-[#CC112F] text-white rounded-md font-medium hover:bg-[#CC112F]/90 transition-colors duration-300 shadow-md hover:shadow-lg;
   }
 
   .button-secondary {
-    @apply px-6 py-3 bg-transparent border border-[#ff0000] text-[#ff0000] rounded-md font-medium hover:bg-[#ff0000]/5 transition-colors duration-300;
+    @apply px-6 py-3 bg-transparent border border-[#CC112F] text-[#CC112F] rounded-md font-medium hover:bg-[#CC112F]/5 transition-colors duration-300;
   }
 
   .card-hover {
@@ -123,3 +123,4 @@
   animation: fade-in 0.8s ease-out forwards;
   opacity: 1; /* Ensure elements remain visible even after animation */
 }
+

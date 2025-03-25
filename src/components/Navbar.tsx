@@ -35,7 +35,7 @@ const Navbar = () => {
           />
           <div className="hidden md:block">
             <h2 className="text-xl font-bold">
-              <span className="text-[#ff0000] font-bold">VOLT</span> <span className="text-volt-dark">CONSULTING GROUP</span>
+              <span className="text-[#CC112F] font-bold">VOLT</span> <span className="text-volt-dark">CONSULTING GROUP</span>
             </h2>
           </div>
         </Link>
@@ -70,7 +70,7 @@ const Navbar = () => {
               <MobileNavLink href="/for-partners" onClick={toggleMenu}>For Partners</MobileNavLink>
               <Link 
                 to="/contact" 
-                className="mx-4 mt-4 py-3 px-4 bg-[#ff0000] text-white text-center rounded-md"
+                className="mx-4 mt-4 py-3 px-4 bg-[#CC112F] text-white text-center rounded-md"
                 onClick={toggleMenu}
               >
                 Contact Us
@@ -86,7 +86,7 @@ const Navbar = () => {
 const NavLink = ({ href, children }: { href: string; children: React.ReactNode }) => (
   <Link 
     to={href} 
-    className="text-volt-dark hover:text-[#ff0000] transition-colors relative after:absolute after:bottom-0 after:left-0 after:h-0.5 after:w-0 after:bg-[#ff0000] after:transition-all hover:after:w-full"
+    className="text-volt-dark hover:text-[#CC112F] transition-colors relative after:absolute after:bottom-0 after:left-0 after:h-0.5 after:w-0 after:bg-[#CC112F] after:transition-all hover:after:w-full"
   >
     {children}
   </Link>

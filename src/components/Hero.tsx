@@ -18,7 +18,7 @@ const Hero = () => {
           />
           <div className="ml-4 text-center md:text-left">
             <h2 className="text-3xl md:text-4xl font-bold">
-              <span className="text-[#ff0000] font-bold">VOLT</span> <span className="text-volt-dark">CONSULTING GROUP</span>
+              <span className="text-[#CC112F] font-bold">VOLT</span> <span className="text-volt-dark">CONSULTING GROUP</span>
             </h2>
           </div>
         </div>
@@ -27,7 +27,7 @@ const Hero = () => {
           <h1 className="heading-xl mb-6 animate-fade-in">
             <span className="text-volt-dark">Electrifying Consulting.</span>
             <br />
-            <span className="text-[#ff0000]">Strategic Impact.</span>
+            <span className="text-[#CC112F]">Strategic Impact.</span>
           </h1>
           
           <p className="text-xl md:text-2xl text-volt-text/80 mb-10 leading-relaxed animate-fade-in">
@@ -35,10 +35,10 @@ const Hero = () => {
           </p>
           
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 animate-fade-in">
-            <Link to="/for-clients" className="button-primary w-full sm:w-auto flex items-center justify-center gap-2 bg-[#ff0000]">
+            <Link to="/for-clients" className="button-primary w-full sm:w-auto flex items-center justify-center gap-2 bg-[#CC112F]">
               Our Services <ArrowRight size={16} />
             </Link>
-            <Link to="/for-students" className="button-secondary w-full sm:w-auto border-[#ff0000] text-[#ff0000]">
+            <Link to="/for-students" className="button-secondary w-full sm:w-auto border-[#CC112F] text-[#CC112F]">
               For Students
             </Link>
           </div>
@@ -47,8 +47,8 @@ const Hero = () => {
         {/* Three equal banners */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-12">
           {/* Banner 1 */}
-          <div className="bg-white/90 p-6 rounded-lg shadow-md hover:shadow-lg transition-all border-l-4 border-[#ff0000]">
-            <div className="mb-3 text-[#ff0000]">
+          <div className="bg-white/90 p-6 rounded-lg shadow-md hover:shadow-lg transition-all border-l-4 border-[#CC112F]">
+            <div className="mb-3 text-[#CC112F]">
               <Zap size={24} />
             </div>
             <h3 className="text-xl font-bold mb-3 text-volt-dark">Powered by Eindhoven University of Technology</h3>
@@ -58,8 +58,8 @@ const Hero = () => {
           </div>
 
           {/* Banner 2 */}
-          <div className="bg-white/90 p-6 rounded-lg shadow-md hover:shadow-lg transition-all border-l-4 border-[#ff0000]">
-            <div className="mb-3 text-[#ff0000]">
+          <div className="bg-white/90 p-6 rounded-lg shadow-md hover:shadow-lg transition-all border-l-4 border-[#CC112F]">
+            <div className="mb-3 text-[#CC112F]">
               <Globe size={24} />
             </div>
             <h3 className="text-xl font-bold mb-3 text-volt-dark">World's First Student-Run Tech Consultancy Firm</h3>
@@ -69,8 +69,8 @@ const Hero = () => {
           </div>
 
           {/* Banner 3 */}
-          <div className="bg-white/90 p-6 rounded-lg shadow-md hover:shadow-lg transition-all border-l-4 border-[#ff0000]">
-            <div className="mb-3 text-[#ff0000]">
+          <div className="bg-white/90 p-6 rounded-lg shadow-md hover:shadow-lg transition-all border-l-4 border-[#CC112F]">
+            <div className="mb-3 text-[#CC112F]">
               <MapPin size={24} />
             </div>
             <h3 className="text-xl font-bold mb-3 text-volt-dark">At the Heart of the Brainport Region</h3>

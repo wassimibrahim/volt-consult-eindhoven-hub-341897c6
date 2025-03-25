@@ -68,7 +68,7 @@ export default {
 					ring: 'hsl(var(--sidebar-ring))'
 				},
 				volt: {
-					red: '#ff0000',
+					red: '#CC112F',
 					lightRed: '#FFECEE',
 					accent: '#FFD100',
 					gray: '#F5F5F7',

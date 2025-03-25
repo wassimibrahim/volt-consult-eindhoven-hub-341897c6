@@ -26,7 +26,7 @@ const Footer = () => {
                 href="https://linkedin.com" 
                 target="_blank" 
                 rel="noopener noreferrer"
-                className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-[#ff0000] transition-colors"
+                className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-[#CC112F] transition-colors"
                 aria-label="LinkedIn"
               >
                 <Linkedin size={18} />
@@ -35,7 +35,7 @@ const Footer = () => {
                 href="https://instagram.com" 
                 target="_blank" 
                 rel="noopener noreferrer"
-                className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-[#ff0000] transition-colors"
+                className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-[#CC112F] transition-colors"
                 aria-label="Instagram"
               >
                 <Instagram size={18} />
@@ -44,7 +44,7 @@ const Footer = () => {
                 href="https://twitter.com" 
                 target="_blank" 
                 rel="noopener noreferrer"
-                className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-[#ff0000] transition-colors"
+                className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-[#CC112F] transition-colors"
                 aria-label="Twitter"
               >
                 <Twitter size={18} />
@@ -90,7 +90,7 @@ const Footer = () => {
                 </li>
               ))}
             </ul>
-            <Link to="/events" className="inline-block mt-4 text-[#ff0000] hover:underline">
+            <Link to="/events" className="inline-block mt-4 text-[#CC112F] hover:underline">
               View All Upcoming Dates →
             </Link>
           </div>
@@ -115,7 +115,7 @@ const Footer = () => {
                 </a>
               </li>
             </ul>
-            <Link to="/contact" className="inline-block mt-4 text-[#ff0000] hover:underline">
+            <Link to="/contact" className="inline-block mt-4 text-[#CC112F] hover:underline">
               Contact Form →
             </Link>
           </div>
