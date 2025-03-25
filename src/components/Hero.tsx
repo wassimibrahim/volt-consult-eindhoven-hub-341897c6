@@ -12,7 +12,7 @@ const Hero = () => {
         {/* Logo and Company Name */}
         <div className="flex items-center justify-center mb-12">
           <img 
-            src="/lovable-uploads/bb3ce8b3-7469-4a8a-a6c5-9cf51ca7a758.png" 
+            src="/lovable-uploads/ac5e381f-7d1e-48d9-9a1a-17b134af0c5c.png" 
             alt="Volt Consulting Group Logo" 
             className="h-32 md:h-40"
           />
