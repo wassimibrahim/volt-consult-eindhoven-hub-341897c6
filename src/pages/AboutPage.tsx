@@ -11,7 +11,7 @@ const AboutPage = () => {
       <div className="pt-24">
         <div className="container-custom pt-8 pb-4">
           <h1 className="heading-lg text-center text-volt-dark">
-            <span className="text-[#ff0000] font-bold">About</span> <span>Us</span>
+            <span className="text-black font-bold">About</span> <span>Us</span>
           </h1>
         </div>
         <AboutSection />
