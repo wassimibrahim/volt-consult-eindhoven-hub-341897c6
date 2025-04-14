@@ -24,38 +24,23 @@ const PartnersSection = () => {
         <div className="grid md:grid-cols-3 gap-8 mb-16">
           <div className="bg-volt-gray rounded-xl p-8 hover:shadow-lg transition-all">
             <h3 className="text-xl font-semibold mb-4 text-volt-dark">Workshops & Networking Events</h3>
-            <p className="text-volt-text/80 mb-6">
+            <p className="text-volt-text/80">
               Collaborative events that connect industry leaders, alumni, and students to share knowledge, enhance skills, and build meaningful professional relationships.
             </p>
-            <img 
-              src="https://images.unsplash.com/photo-1605810230434-7631ac76ec81" 
-              alt="Workshops and networking" 
-              className="w-full h-48 object-cover rounded-lg"
-            />
           </div>
           
           <div className="bg-volt-gray rounded-xl p-8 hover:shadow-lg transition-all">
             <h3 className="text-xl font-semibold mb-4 text-volt-dark">Brand Promotion & Recruiting Support</h3>
-            <p className="text-volt-text/80 mb-6">
+            <p className="text-volt-text/80">
               Targeted marketing and outreach initiatives that enhance your organization's visibility, reputation, and recruitment opportunities among top talent.
             </p>
-            <img 
-              src="https://images.unsplash.com/photo-1487058792275-0ad4aaf24ca7" 
-              alt="Brand promotion and recruiting" 
-              className="w-full h-48 object-cover rounded-lg"
-            />
           </div>
           
           <div className="bg-volt-gray rounded-xl p-8 hover:shadow-lg transition-all">
             <h3 className="text-xl font-semibold mb-4 text-volt-dark">Consulting Project Collaboration</h3>
-            <p className="text-volt-text/80 mb-6">
+            <p className="text-volt-text/80">
               Engage directly with talented student teams on consulting projects. Gain fresh perspectives, innovative solutions, and actionable insights.
             </p>
-            <img 
-              src="https://images.unsplash.com/photo-1531297484001-80022131f5a1" 
-              alt="Consulting project collaboration" 
-              className="w-full h-48 object-cover rounded-lg"
-            />
           </div>
         </div>
         
