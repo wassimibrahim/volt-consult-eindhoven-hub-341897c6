@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Navigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/components/ui/use-toast';
@@ -92,10 +92,9 @@ const AdminAuth = ({ children }: AdminAuthProps) => {
           </form>
           
           <div className="mt-4 text-center">
-            <Navigate to="/" replace />
-            <a href="/" className="text-sm text-blue-600 hover:underline">
+            <Link to="/" className="text-sm text-blue-600 hover:underline">
               Return to Homepage
-            </a>
+            </Link>
           </div>
         </div>
       </div>

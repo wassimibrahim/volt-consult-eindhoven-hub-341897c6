@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import Navbar from '../components/Navbar';
@@ -11,7 +10,8 @@ type PositionType = {
   id: string;
   title: string;
   description: string;
-  requirements: string[];
+  requirements?: string[];
+  preferredMajors?: string[];
 };
 
 const voltPositions: PositionType[] = [
@@ -51,19 +51,22 @@ const projectPositions = [
         id: 'data-scientist',
         title: 'Data Scientist',
         description: 'Work with healthcare data to develop predictive models for patient readmission.',
-        preferredMajors: ['Computer Science', 'Data Science', 'Applied Mathematics', 'Healthcare Informatics']
+        preferredMajors: ['Computer Science', 'Data Science', 'Applied Mathematics', 'Healthcare Informatics'],
+        requirements: []
       },
       {
         id: 'ml-engineer',
         title: 'Machine Learning Engineer',
         description: 'Implement and optimize machine learning algorithms for the healthcare prediction system.',
-        preferredMajors: ['Computer Science', 'AI', 'Software Engineering']
+        preferredMajors: ['Computer Science', 'AI', 'Software Engineering'],
+        requirements: []
       },
       {
         id: 'ui-designer',
         title: 'UI/UX Designer',
         description: 'Design intuitive interfaces for healthcare professionals to interact with the prediction system.',
-        preferredMajors: ['Interaction Design', 'Human-Computer Interaction', 'Psychology', 'Design']
+        preferredMajors: ['Interaction Design', 'Human-Computer Interaction', 'Psychology', 'Design'],
+        requirements: []
       }
     ]
   }
@@ -152,7 +155,7 @@ const ApplyPage = () => {
                       <div className="mb-4">
                         <h4 className="font-medium mb-2">Requirements:</h4>
                         <ul className="list-disc pl-5 space-y-1">
-                          {position.requirements.map((req, idx) => (
+                          {position.requirements?.map((req, idx) => (
                             <li key={idx} className="text-volt-text/80">{req}</li>
                           ))}
                         </ul>
@@ -205,7 +208,7 @@ const ApplyPage = () => {
                           <div className="mb-4">
                             <h4 className="font-medium mb-2">Preferred Majors:</h4>
                             <ul className="list-disc pl-5 space-y-1">
-                              {position.preferredMajors.map((major, idx) => (
+                              {position.preferredMajors?.map((major, idx) => (
                                 <li key={idx} className="text-volt-text/80">{major}</li>
                               ))}
                             </ul>
