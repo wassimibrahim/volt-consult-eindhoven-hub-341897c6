@@ -1,4 +1,3 @@
-
 import React from 'react';
 
 const AboutSection = () => {
@@ -62,9 +61,9 @@ const AboutSection = () => {
             <div className="absolute bottom-8 right-8 p-6 bg-white rounded-xl shadow-lg max-w-xs">
               <div className="flex items-center gap-2 mb-2">
                 <img 
-                  src="/lovable-uploads/4062c0cb-8a1c-48cc-83e9-a22f371228fe.png" 
-                  alt="Volt Logo" 
-                  className="h-6"
+                  src="/lovable-uploads/97dbaa74-132e-4164-ada7-fc3564b86e26.png" 
+                  alt="Eindhoven Tech Landscape" 
+                  className="h-6 object-contain"
                 />
                 <h3 className="text-xl font-semibold text-volt-dark">World's First</h3>
               </div>
