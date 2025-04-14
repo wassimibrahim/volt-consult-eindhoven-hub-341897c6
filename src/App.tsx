@@ -11,6 +11,8 @@ import ForStudentsPage from "./pages/ForStudentsPage";
 import ForClientsPage from "./pages/ForClientsPage";
 import PartnersPage from "./pages/PartnersPage";
 import ContactPage from "./pages/ContactPage";
+import ApplyPage from "./pages/ApplyPage";
+import AdminPage from "./pages/AdminPage";
 
 const queryClient = new QueryClient();
 
@@ -28,6 +30,8 @@ const App = () => (
           <Route path="/for-partners" element={<PartnersPage />} />
           <Route path="/partners" element={<PartnersPage />} /> {/* Keep this for backward compatibility */}
           <Route path="/contact" element={<ContactPage />} />
+          <Route path="/apply" element={<ApplyPage />} />
+          <Route path="/admin" element={<AdminPage />} />
           {/* Catch-all route */}
           <Route path="*" element={<NotFound />} />
         </Routes>

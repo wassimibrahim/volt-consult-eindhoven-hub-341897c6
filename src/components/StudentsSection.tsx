@@ -57,6 +57,15 @@ const StudentsSection = () => {
           <p className="text-xl text-white/80 leading-relaxed">
             Join Volt Consulting Group to gain valuable consulting experience, develop professional skills, and make a real impact while still at university.
           </p>
+          
+          <div className="mt-10">
+            <Link 
+              to="/apply" 
+              className="bg-white text-[#ff0000] px-10 py-4 text-xl font-bold rounded-lg shadow-lg hover:bg-white/90 transition-all transform hover:scale-105"
+            >
+              APPLY NOW
+            </Link>
+          </div>
         </div>
         
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-16">

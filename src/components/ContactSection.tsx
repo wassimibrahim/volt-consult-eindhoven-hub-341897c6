@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Mail, MapPin, Phone } from 'lucide-react';
 
@@ -56,7 +55,7 @@ const ContactSection = () => {
                 </div>
                 <div>
                   <h3 className="font-semibold mb-1">Email</h3>
-                  <p className="text-volt-text/80">info@voltconsultinggroup.com</p>
+                  <p className="text-volt-text/80">eindhoven@voltconsultingroup.com</p>
                 </div>
               </div>
               
@@ -76,7 +75,7 @@ const ContactSection = () => {
                 </div>
                 <div>
                   <h3 className="font-semibold mb-1">Phone</h3>
-                  <p className="text-volt-text/80">+31 (0) XX XXX XXXX</p>
+                  <p className="text-volt-text/80">+31613838880</p>
                 </div>
               </div>
             </div>
@@ -84,16 +83,10 @@ const ContactSection = () => {
             <div className="mt-10">
               <h3 className="heading-sm mb-4 text-volt-dark">Upcoming Dates</h3>
               <div className="space-y-3">
-                {[
-                  { event: "Launch Event", date: "September 15, 2023" },
-                  { event: "Recruitment Cycle Opens", date: "October 1, 2023" },
-                  { event: "Workshop Series", date: "October 20, 2023" }
-                ].map((item, idx) => (
-                  <div key={idx} className="flex justify-between items-center py-2 border-b border-volt-red/10">
-                    <span className="font-medium">{item.event}</span>
-                    <span className="text-volt-red">{item.date}</span>
-                  </div>
-                ))}
+                <div className="flex justify-between items-center py-2 border-b border-volt-red/10">
+                  <span className="font-medium">Recruitment Cycle Opens</span>
+                  <span className="text-volt-red">June 01, 2025</span>
+                </div>
               </div>
             </div>
           </div>

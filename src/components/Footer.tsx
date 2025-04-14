@@ -26,7 +26,7 @@ const Footer = () => {
                 href="https://linkedin.com" 
                 target="_blank" 
                 rel="noopener noreferrer"
-                className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-[#CC112F] transition-colors"
+                className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-[#F00000] transition-colors"
                 aria-label="LinkedIn"
               >
                 <Linkedin size={18} />
@@ -35,7 +35,7 @@ const Footer = () => {
                 href="https://instagram.com" 
                 target="_blank" 
                 rel="noopener noreferrer"
-                className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-[#CC112F] transition-colors"
+                className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-[#F00000] transition-colors"
                 aria-label="Instagram"
               >
                 <Instagram size={18} />
@@ -44,7 +44,7 @@ const Footer = () => {
                 href="https://twitter.com" 
                 target="_blank" 
                 rel="noopener noreferrer"
-                className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-[#CC112F] transition-colors"
+                className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-[#F00000] transition-colors"
                 aria-label="Twitter"
               >
                 <Twitter size={18} />
@@ -62,7 +62,8 @@ const Footer = () => {
                 { text: "For Clients", url: "/for-clients" },
                 { text: "For Students", url: "/for-students" },
                 { text: "For Partners", url: "/for-partners" },
-                { text: "Contact", url: "/contact" }
+                { text: "Contact", url: "/contact" },
+                { text: "Admin", url: "/admin" }
               ].map((link, idx) => (
                 <li key={idx}>
                   <Link 
@@ -79,20 +80,11 @@ const Footer = () => {
           <div>
             <h3 className="text-lg font-semibold mb-4">Upcoming Dates</h3>
             <ul className="space-y-4">
-              {[
-                { event: "Launch Event", date: "September 15, 2023" },
-                { event: "Recruitment Cycle Opens", date: "October 1, 2023" },
-                { event: "Workshop Series", date: "October 20, 2023" }
-              ].map((item, idx) => (
-                <li key={idx} className="border-b border-white/10 pb-2">
-                  <p className="font-medium">{item.event}</p>
-                  <p className="text-white/70 text-sm">{item.date}</p>
-                </li>
-              ))}
+              <li className="border-b border-white/10 pb-2">
+                <p className="font-medium">Recruitment Cycle Opens</p>
+                <p className="text-white/70 text-sm">June 01, 2025</p>
+              </li>
             </ul>
-            <Link to="/events" className="inline-block mt-4 text-[#CC112F] hover:underline">
-              View All Upcoming Dates →
-            </Link>
           </div>
           
           <div>
@@ -100,8 +92,8 @@ const Footer = () => {
             <ul className="space-y-3 text-white/70">
               <li>
                 <strong className="text-white">Email:</strong>{" "}
-                <a href="mailto:info@voltconsultinggroup.com" className="hover:text-white transition-colors">
-                  info@voltconsultinggroup.com
+                <a href="mailto:eindhoven@voltconsultingroup.com" className="hover:text-white transition-colors">
+                  eindhoven@voltconsultingroup.com
                 </a>
               </li>
               <li>
@@ -110,12 +102,12 @@ const Footer = () => {
               </li>
               <li>
                 <strong className="text-white">Phone:</strong>{" "}
-                <a href="tel:+31XXXXXXXXXX" className="hover:text-white transition-colors">
-                  +31 (0) XX XXX XXXX
+                <a href="tel:+31613838880" className="hover:text-white transition-colors">
+                  +31613838880
                 </a>
               </li>
             </ul>
-            <Link to="/contact" className="inline-block mt-4 text-[#CC112F] hover:underline">
+            <Link to="/contact" className="inline-block mt-4 text-[#F00000] hover:underline">
               Contact Form →
             </Link>
           </div>
