@@ -52,8 +52,8 @@ const AboutSection = () => {
           <div className="relative">
             <div className="relative rounded-2xl overflow-hidden shadow-xl aspect-square">
               <img 
-                src="public/lovable-uploads/1aa43143-fd97-47f2-8821-8677a00b3a64.png" 
-                alt="Red lightbulb with Volt logo"
+                src="/lovable-uploads/97dbaa74-132e-4164-ada7-fc3564b86e26.png" 
+                alt="Eindhoven tech landscape"
                 className="object-cover w-full h-full"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-volt-red/30 to-transparent"></div>
