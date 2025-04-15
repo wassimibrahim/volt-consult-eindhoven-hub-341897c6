@@ -5,12 +5,7 @@ import Footer from '../components/Footer';
 import AdminAuth from '../components/AdminAuth';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { Textarea } from '@/components/ui/textarea';
-import { FileText, Search, Download, UserCheck, UserX, Plus, Save, Trash } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
-import { toast } from '@/components/ui/use-toast';
+import { FileText, Search, Download, UserCheck, UserX } from 'lucide-react';
 
 // Define application type
 interface ApplicationType {
@@ -31,19 +26,6 @@ interface ApplicationType {
     phoneNumber?: string;
     linkedinProfile: string;
   };
-}
-
-// Define position type
-interface PositionType {
-  id: number;
-  title: string;
-  description: string;
-  requirements: string[];
-  type: 'volt' | 'project';
-  companyName?: string;
-  projectDescription?: string;
-  preferredMajors?: string[];
-  active: boolean;
 }
 
 // Sample application data as fallback
@@ -138,25 +120,10 @@ const AdminPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState<'all' | 'volt' | 'project'>('all');
   const [filterStatus, setFilterStatus] = useState<'all' | 'pending' | 'reviewed' | 'accepted' | 'rejected'>('all');
-  
-  // State for positions management
-  const [positions, setPositions] = useState<PositionType[]>([]);
-  const [newPosition, setNewPosition] = useState<Partial<PositionType>>({
-    title: '',
-    description: '',
-    requirements: [],
-    type: 'volt',
-    active: true
-  });
-  const [reqInput, setReqInput] = useState('');
-  const [majorInput, setMajorInput] = useState('');
-  const [activeTab, setActiveTab] = useState<'applications' | 'positions'>('applications');
-  const [positionTab, setPositionTab] = useState<'volt' | 'project'>('volt');
-  const [editingPositionId, setEditingPositionId] = useState<number | null>(null);
 
-  // Load applications and positions from localStorage on component mount
+  // Load applications from localStorage on component mount
   useEffect(() => {
-    const loadData = () => {
+    const loadApplications = () => {
       try {
         // Get applications from localStorage
         const storedApplications = localStorage.getItem('applications');
@@ -171,28 +138,14 @@ const AdminPage = () => {
           setApplications(sampleApplications);
           console.log('No stored applications found, using samples');
         }
-
-        // Get positions from localStorage
-        const storedPositions = localStorage.getItem('positions');
-        if (storedPositions) {
-          setPositions(JSON.parse(storedPositions));
-          console.log('Loaded positions from localStorage:', JSON.parse(storedPositions));
-        }
       } catch (error) {
-        console.error('Error loading data:', error);
+        console.error('Error loading applications:', error);
         setApplications(sampleApplications);
       }
     };
 
-    loadData();
+    loadApplications();
   }, []);
-
-  // Function to save positions to localStorage whenever they change
-  useEffect(() => {
-    if (positions.length > 0) {
-      localStorage.setItem('positions', JSON.stringify(positions));
-    }
-  }, [positions]);
 
   const filteredApplications = applications.filter(app => {
     const matchesSearch = app.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -217,128 +170,6 @@ const AdminPage = () => {
     }
   };
 
-  const handleAddRequirement = () => {
-    if (reqInput.trim()) {
-      setNewPosition({
-        ...newPosition,
-        requirements: [...(newPosition.requirements || []), reqInput.trim()]
-      });
-      setReqInput('');
-    }
-  };
-
-  const handleRemoveRequirement = (index: number) => {
-    const updatedReqs = [...(newPosition.requirements || [])];
-    updatedReqs.splice(index, 1);
-    setNewPosition({
-      ...newPosition,
-      requirements: updatedReqs
-    });
-  };
-
-  const handleAddMajor = () => {
-    if (majorInput.trim()) {
-      setNewPosition({
-        ...newPosition,
-        preferredMajors: [...(newPosition.preferredMajors || []), majorInput.trim()]
-      });
-      setMajorInput('');
-    }
-  };
-
-  const handleRemoveMajor = (index: number) => {
-    const updatedMajors = [...(newPosition.preferredMajors || [])];
-    updatedMajors.splice(index, 1);
-    setNewPosition({
-      ...newPosition,
-      preferredMajors: updatedMajors
-    });
-  };
-
-  const handleSavePosition = () => {
-    // Validate required fields
-    if (!newPosition.title || !newPosition.description) {
-      toast({
-        title: "Missing Information",
-        description: "Please fill in all required fields.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (editingPositionId !== null) {
-      // Update existing position
-      const updatedPositions = positions.map(pos => 
-        pos.id === editingPositionId ? { ...newPosition, id: editingPositionId } as PositionType : pos
-      );
-      setPositions(updatedPositions);
-      toast({
-        title: "Position Updated",
-        description: `${newPosition.title} has been updated successfully.`,
-      });
-    } else {
-      // Add new position
-      const newId = positions.length > 0 ? Math.max(...positions.map(p => p.id)) + 1 : 1;
-      const positionToAdd = { 
-        ...newPosition, 
-        id: newId,
-        active: true
-      } as PositionType;
-      
-      setPositions([...positions, positionToAdd]);
-      toast({
-        title: "Position Added",
-        description: `${newPosition.title} has been added successfully.`,
-      });
-    }
-
-    // Reset form
-    setNewPosition({
-      title: '',
-      description: '',
-      requirements: [],
-      type: positionTab,
-      active: true
-    });
-    setEditingPositionId(null);
-  };
-
-  const handleEditPosition = (position: PositionType) => {
-    setNewPosition(position);
-    setEditingPositionId(position.id);
-    setPositionTab(position.type);
-  };
-
-  const handleDeletePosition = (id: number) => {
-    const updatedPositions = positions.filter(pos => pos.id !== id);
-    setPositions(updatedPositions);
-    
-    if (editingPositionId === id) {
-      setNewPosition({
-        title: '',
-        description: '',
-        requirements: [],
-        type: positionTab,
-        active: true
-      });
-      setEditingPositionId(null);
-    }
-
-    toast({
-      title: "Position Deleted",
-      description: "The position has been removed.",
-    });
-  };
-
-  const handleToggleActive = (id: number) => {
-    const updatedPositions = positions.map(pos => 
-      pos.id === id ? { ...pos, active: !pos.active } : pos
-    );
-    setPositions(updatedPositions);
-  };
-
-  const filteredPositions = positions.filter(pos => pos.type === positionTab);
-
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar />
@@ -348,346 +179,101 @@ const AdminPage = () => {
             <div className="bg-white rounded-xl shadow-md p-6 mb-6">
               <h1 className="heading-lg text-volt-dark mb-6">Admin Dashboard</h1>
               
-              <Tabs defaultValue="applications" className="w-full" onValueChange={(value) => setActiveTab(value as 'applications' | 'positions')}>
-                <TabsList className="mb-6">
-                  <TabsTrigger value="applications">Applications</TabsTrigger>
-                  <TabsTrigger value="positions">Manage Positions</TabsTrigger>
-                </TabsList>
-                
-                <TabsContent value="applications">
-                  <div className="flex flex-col md:flex-row gap-4 mb-6">
-                    <div className="flex-1">
-                      <div className="relative">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-                        <Input
-                          placeholder="Search applications..."
-                          className="pl-10"
-                          value={searchTerm}
-                          onChange={(e) => setSearchTerm(e.target.value)}
-                        />
-                      </div>
-                    </div>
-                    <div className="flex gap-4">
-                      <select
-                        className="px-3 py-2 rounded-md border border-gray-300"
-                        value={filterType}
-                        onChange={(e) => setFilterType(e.target.value as any)}
-                      >
-                        <option value="all">All Types</option>
-                        <option value="volt">Volt Applications</option>
-                        <option value="project">Project Applications</option>
-                      </select>
-                      
-                      <select
-                        className="px-3 py-2 rounded-md border border-gray-300"
-                        value={filterStatus}
-                        onChange={(e) => setFilterStatus(e.target.value as any)}
-                      >
-                        <option value="all">All Status</option>
-                        <option value="pending">Pending</option>
-                        <option value="reviewed">Reviewed</option>
-                        <option value="accepted">Accepted</option>
-                        <option value="rejected">Rejected</option>
-                      </select>
-                    </div>
+              <div className="flex flex-col md:flex-row gap-4 mb-6">
+                <div className="flex-1">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                    <Input
+                      placeholder="Search applications..."
+                      className="pl-10"
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                    />
                   </div>
+                </div>
+                <div className="flex gap-4">
+                  <select
+                    className="px-3 py-2 rounded-md border border-gray-300"
+                    value={filterType}
+                    onChange={(e) => setFilterType(e.target.value as any)}
+                  >
+                    <option value="all">All Types</option>
+                    <option value="volt">Volt Applications</option>
+                    <option value="project">Project Applications</option>
+                  </select>
                   
-                  <div className="overflow-x-auto">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Name</TableHead>
-                          <TableHead>Position</TableHead>
-                          <TableHead>Type</TableHead>
-                          <TableHead>Date</TableHead>
-                          <TableHead>Status</TableHead>
-                          <TableHead>Documents</TableHead>
+                  <select
+                    className="px-3 py-2 rounded-md border border-gray-300"
+                    value={filterStatus}
+                    onChange={(e) => setFilterStatus(e.target.value as any)}
+                  >
+                    <option value="all">All Status</option>
+                    <option value="pending">Pending</option>
+                    <option value="reviewed">Reviewed</option>
+                    <option value="accepted">Accepted</option>
+                    <option value="rejected">Rejected</option>
+                  </select>
+                </div>
+              </div>
+              
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Name</TableHead>
+                      <TableHead>Position</TableHead>
+                      <TableHead>Type</TableHead>
+                      <TableHead>Date</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Documents</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredApplications.length > 0 ? (
+                      filteredApplications.map((app) => (
+                        <TableRow 
+                          key={app.id} 
+                          className="cursor-pointer hover:bg-gray-50"
+                          onClick={() => setSelectedApplication(app)}
+                        >
+                          <TableCell className="font-medium">{app.fullName}</TableCell>
+                          <TableCell>{app.position}</TableCell>
+                          <TableCell className="capitalize">{app.type}</TableCell>
+                          <TableCell>{new Date(app.date).toLocaleDateString()}</TableCell>
+                          <TableCell>
+                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusColors[app.status]}`}>
+                              {app.status.charAt(0).toUpperCase() + app.status.slice(1)}
+                            </span>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex space-x-2">
+                              {app.documents.map((doc, idx) => (
+                                <div 
+                                  key={idx}
+                                  className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center cursor-pointer hover:bg-gray-200"
+                                  title={`Download ${doc}`}
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  <FileText size={16} />
+                                </div>
+                              ))}
+                            </div>
+                          </TableCell>
                         </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {filteredApplications.length > 0 ? (
-                          filteredApplications.map((app) => (
-                            <TableRow 
-                              key={app.id} 
-                              className="cursor-pointer hover:bg-gray-50"
-                              onClick={() => setSelectedApplication(app)}
-                            >
-                              <TableCell className="font-medium">{app.fullName}</TableCell>
-                              <TableCell>{app.position}</TableCell>
-                              <TableCell className="capitalize">{app.type}</TableCell>
-                              <TableCell>{new Date(app.date).toLocaleDateString()}</TableCell>
-                              <TableCell>
-                                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusColors[app.status]}`}>
-                                  {app.status.charAt(0).toUpperCase() + app.status.slice(1)}
-                                </span>
-                              </TableCell>
-                              <TableCell>
-                                <div className="flex space-x-2">
-                                  {app.documents.map((doc, idx) => (
-                                    <div 
-                                      key={idx}
-                                      className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center cursor-pointer hover:bg-gray-200"
-                                      title={`Download ${doc}`}
-                                      onClick={(e) => e.stopPropagation()}
-                                    >
-                                      <FileText size={16} />
-                                    </div>
-                                  ))}
-                                </div>
-                              </TableCell>
-                            </TableRow>
-                          ))
-                        ) : (
-                          <TableRow>
-                            <TableCell colSpan={6} className="text-center py-8 text-gray-500">
-                              No applications found with the current filters
-                            </TableCell>
-                          </TableRow>
-                        )}
-                      </TableBody>
-                    </Table>
-                  </div>
-                </TabsContent>
-                
-                <TabsContent value="positions">
-                  <div className="grid md:grid-cols-2 gap-6">
-                    {/* Position Form Section */}
-                    <div className="bg-white p-6 rounded-lg border border-gray-200">
-                      <Tabs defaultValue="volt" onValueChange={(value) => setPositionTab(value as 'volt' | 'project')}>
-                        <TabsList className="mb-4">
-                          <TabsTrigger value="volt">Volt Positions</TabsTrigger>
-                          <TabsTrigger value="project">Project Positions</TabsTrigger>
-                        </TabsList>
-                        
-                        <TabsContent value="volt">
-                          <div className="space-y-4">
-                            <h3 className="font-semibold text-lg">
-                              {editingPositionId !== null ? 'Edit Volt Position' : 'Add New Volt Position'}
-                            </h3>
-                            
-                            <div>
-                              <Label htmlFor="title">Position Title*</Label>
-                              <Input
-                                id="title"
-                                value={newPosition.title || ''}
-                                onChange={(e) => setNewPosition({...newPosition, title: e.target.value})}
-                                placeholder="e.g., Technology Consultant"
-                              />
-                            </div>
-                            
-                            <div>
-                              <Label htmlFor="description">Position Description*</Label>
-                              <Textarea
-                                id="description"
-                                value={newPosition.description || ''}
-                                onChange={(e) => setNewPosition({...newPosition, description: e.target.value})}
-                                placeholder="Describe the position and responsibilities"
-                                rows={4}
-                              />
-                            </div>
-                            
-                            <div>
-                              <Label>Requirements</Label>
-                              <div className="flex gap-2 mb-2">
-                                <Input
-                                  value={reqInput}
-                                  onChange={(e) => setReqInput(e.target.value)}
-                                  placeholder="e.g., Strong analytical skills"
-                                  className="flex-1"
-                                />
-                                <Button 
-                                  type="button"
-                                  size="sm"
-                                  onClick={handleAddRequirement}
-                                >
-                                  <Plus size={16} />
-                                </Button>
-                              </div>
-                              
-                              <div className="mt-2 space-y-2">
-                                {newPosition.requirements?.map((req, idx) => (
-                                  <div key={idx} className="flex items-center justify-between bg-gray-50 p-2 rounded">
-                                    <span>{req}</span>
-                                    <button 
-                                      onClick={() => handleRemoveRequirement(idx)}
-                                      className="text-red-500 hover:text-red-700"
-                                    >
-                                      <Trash size={16} />
-                                    </button>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                            
-                            <div className="pt-4">
-                              <Button onClick={handleSavePosition} className="w-full">
-                                {editingPositionId !== null ? 'Update Position' : 'Add Position'}
-                              </Button>
-                            </div>
-                          </div>
-                        </TabsContent>
-                        
-                        <TabsContent value="project">
-                          <div className="space-y-4">
-                            <h3 className="font-semibold text-lg">
-                              {editingPositionId !== null ? 'Edit Project Position' : 'Add New Project Position'}
-                            </h3>
-                            
-                            <div>
-                              <Label htmlFor="companyName">Company Name*</Label>
-                              <Input
-                                id="companyName"
-                                value={newPosition.companyName || ''}
-                                onChange={(e) => setNewPosition({...newPosition, companyName: e.target.value})}
-                                placeholder="e.g., Company X"
-                              />
-                            </div>
-                            
-                            <div>
-                              <Label htmlFor="projectDescription">Project Description*</Label>
-                              <Textarea
-                                id="projectDescription"
-                                value={newPosition.projectDescription || ''}
-                                onChange={(e) => setNewPosition({...newPosition, projectDescription: e.target.value})}
-                                placeholder="Describe the project"
-                                rows={3}
-                              />
-                            </div>
-                            
-                            <div>
-                              <Label htmlFor="title">Position Title*</Label>
-                              <Input
-                                id="title"
-                                value={newPosition.title || ''}
-                                onChange={(e) => setNewPosition({...newPosition, title: e.target.value})}
-                                placeholder="e.g., Data Scientist"
-                              />
-                            </div>
-                            
-                            <div>
-                              <Label htmlFor="description">Position Description*</Label>
-                              <Textarea
-                                id="description"
-                                value={newPosition.description || ''}
-                                onChange={(e) => setNewPosition({...newPosition, description: e.target.value})}
-                                placeholder="Describe the position and responsibilities"
-                                rows={3}
-                              />
-                            </div>
-                            
-                            <div>
-                              <Label>Preferred Majors</Label>
-                              <div className="flex gap-2 mb-2">
-                                <Input
-                                  value={majorInput}
-                                  onChange={(e) => setMajorInput(e.target.value)}
-                                  placeholder="e.g., Computer Science"
-                                  className="flex-1"
-                                />
-                                <Button 
-                                  type="button"
-                                  size="sm"
-                                  onClick={handleAddMajor}
-                                >
-                                  <Plus size={16} />
-                                </Button>
-                              </div>
-                              
-                              <div className="mt-2 space-y-2">
-                                {newPosition.preferredMajors?.map((major, idx) => (
-                                  <div key={idx} className="flex items-center justify-between bg-gray-50 p-2 rounded">
-                                    <span>{major}</span>
-                                    <button 
-                                      onClick={() => handleRemoveMajor(idx)}
-                                      className="text-red-500 hover:text-red-700"
-                                    >
-                                      <Trash size={16} />
-                                    </button>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                            
-                            <div className="pt-4">
-                              <Button onClick={handleSavePosition} className="w-full">
-                                {editingPositionId !== null ? 'Update Position' : 'Add Position'}
-                              </Button>
-                            </div>
-                          </div>
-                        </TabsContent>
-                      </Tabs>
-                    </div>
-                    
-                    {/* Positions List Section */}
-                    <div>
-                      <h3 className="font-semibold text-lg mb-4">
-                        {positionTab === 'volt' ? 'Volt Positions' : 'Project Positions'}
-                      </h3>
-                      
-                      {filteredPositions.length > 0 ? (
-                        <div className="space-y-4">
-                          {filteredPositions.map(position => (
-                            <div key={position.id} className="border rounded-lg p-4">
-                              <div className="flex justify-between items-center mb-2">
-                                <h4 className="font-medium text-lg">{position.title}</h4>
-                                <div className="flex space-x-2">
-                                  <button
-                                    onClick={() => handleToggleActive(position.id)}
-                                    className={`px-2 py-1 rounded text-xs font-medium ${
-                                      position.active 
-                                        ? 'bg-green-100 text-green-800' 
-                                        : 'bg-gray-100 text-gray-800'
-                                    }`}
-                                  >
-                                    {position.active ? 'Active' : 'Inactive'}
-                                  </button>
-                                  <button
-                                    onClick={() => handleEditPosition(position)}
-                                    className="text-blue-600 hover:text-blue-800"
-                                  >
-                                    Edit
-                                  </button>
-                                  <button
-                                    onClick={() => handleDeletePosition(position.id)}
-                                    className="text-red-600 hover:text-red-800"
-                                  >
-                                    Delete
-                                  </button>
-                                </div>
-                              </div>
-                              
-                              <p className="text-gray-600 text-sm mb-2 line-clamp-2">{position.description}</p>
-                              
-                              {positionTab === 'project' && position.companyName && (
-                                <div className="text-sm text-gray-500">
-                                  <span className="font-medium">Company:</span> {position.companyName}
-                                </div>
-                              )}
-                              
-                              {position.requirements && position.requirements.length > 0 && (
-                                <div className="mt-2">
-                                  <span className="text-sm font-medium">Requirements: </span>
-                                  <span className="text-sm text-gray-500">
-                                    {position.requirements.join(', ')}
-                                  </span>
-                                </div>
-                              )}
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <div className="text-center py-8 bg-gray-50 rounded-lg border border-dashed border-gray-300">
-                          <p className="text-gray-500">No positions added yet.</p>
-                          <p className="text-gray-400 text-sm">Create a new position using the form on the left.</p>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </TabsContent>
-              </Tabs>
+                      ))
+                    ) : (
+                      <TableRow>
+                        <TableCell colSpan={6} className="text-center py-8 text-gray-500">
+                          No applications found with the current filters
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
             </div>
             
-            {selectedApplication && activeTab === 'applications' && (
+            {selectedApplication && (
               <div className="bg-white rounded-xl shadow-md p-6">
                 <div className="flex justify-between items-start mb-6">
                   <div>

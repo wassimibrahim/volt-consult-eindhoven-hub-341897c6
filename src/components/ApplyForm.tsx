@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Input } from '@/components/ui/input';
@@ -111,7 +112,7 @@ const ApplyForm: React.FC<ApplyFormProps> = ({ positionTitle, applicationType })
     'Applied Mathematics',
     'Applied Physics',
     'Architecture, urbanism and building Sciences',
-    'Automotive Technology',
+    'Automotice Technology',
     'Biomedische Technologie',
     'Chemical Engineering and Chemistry',
     'Computer Science and Engineering',
