@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
+import { toast } from '@/components/ui/use-toast';
 
 interface ApplyFormProps {
   positionTitle: string;
@@ -14,10 +15,14 @@ interface ApplyFormProps {
 const ApplyForm: React.FC<ApplyFormProps> = ({ positionTitle, applicationType }) => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
-    fullName: '',
+    firstName: '',
+    familyName: '',
     birthDate: '',
     degreeProgram: '',
+    customDegreeProgram: '',
     yearOfStudy: '',
+    email: '',
+    phoneNumber: '',
     linkedinProfile: '',
     cv: null as File | null,
     motivationLetter: null as File | null,
@@ -45,65 +50,141 @@ const ApplyForm: React.FC<ApplyFormProps> = ({ positionTitle, applicationType })
     e.preventDefault();
     setSubmitting(true);
     
-    // Here you would typically send the data to your backend
-    // For now, we'll simulate a successful submission
-    
     try {
       // Simulate API call delay
       await new Promise(resolve => setTimeout(resolve, 1500));
       
-      // For demo purposes, just log the data
-      console.log('Application submitted:', {
-        ...formData,
-        positionTitle,
-        applicationType
-      });
+      // Get existing applications from localStorage or initialize empty array
+      const existingApplications = JSON.parse(localStorage.getItem('applications') || '[]');
+      
+      // Add the new application with an ID and timestamp
+      const newApplication = {
+        id: existingApplications.length > 0 ? Math.max(...existingApplications.map((app: any) => app.id)) + 1 : 1,
+        fullName: `${formData.firstName} ${formData.familyName}`,
+        position: positionTitle,
+        type: applicationType,
+        date: new Date().toISOString().split('T')[0],
+        status: 'pending',
+        documents: ['CV', 'Motivation Letter'],
+        details: {
+          firstName: formData.firstName,
+          familyName: formData.familyName,
+          birthDate: formData.birthDate,
+          degreeProgram: formData.degreeProgram === 'Master' || formData.degreeProgram === 'Other' 
+            ? `${formData.degreeProgram} - ${formData.customDegreeProgram}` 
+            : formData.degreeProgram,
+          yearOfStudy: formData.yearOfStudy,
+          email: formData.email,
+          phoneNumber: formData.phoneNumber,
+          linkedinProfile: formData.linkedinProfile,
+        }
+      };
+      
+      // Save updated applications to localStorage
+      localStorage.setItem('applications', JSON.stringify([...existingApplications, newApplication]));
+      
+      // Log for debugging
+      console.log('Application submitted:', newApplication);
+      console.log('All applications:', JSON.parse(localStorage.getItem('applications') || '[]'));
       
       // Show success message
-      alert('Your application has been submitted successfully!');
+      toast({
+        title: "Application Submitted",
+        description: "Your application has been submitted successfully!",
+        variant: "default",
+      });
       
       // Redirect to home page
       navigate('/');
     } catch (error) {
       console.error('Error submitting application:', error);
-      alert('There was an error submitting your application. Please try again.');
+      toast({
+        title: "Error",
+        description: "There was an error submitting your application. Please try again.",
+        variant: "destructive",
+      });
     } finally {
       setSubmitting(false);
     }
   };
 
   const degreeOptions = [
-    'Bachelor - Computer Science',
-    'Bachelor - Data Science',
-    'Bachelor - Electrical Engineering',
-    'Bachelor - Industrial Design',
-    'Bachelor - Business Information Systems',
-    'Master - Computer Science',
-    'Master - Artificial Intelligence',
-    'Master - Data Science Engineering',
-    'Master - Information Security',
-    'Master - Human-Computer Interaction',
-    'PhD - Computer Science',
-    'PhD - Data Science',
-    'PhD - Electrical Engineering',
+    'Applied Mathematics',
+    'Applied Physics',
+    'Architecture, urbanism and building Sciences',
+    'Automotice Technology',
+    'Biomedische Technologie',
+    'Chemical Engineering and Chemistry',
+    'Computer Science and Engineering',
+    'Data Science',
+    'Electrical Engineering',
+    'Industrial Design',
+    'Industrial Engineering',
+    'Mechanical Engineering',
+    'Medische Wetenschappen en Technologie',
+    'Psychology and Technology',
+    'Sustainable Innovation',
+    'Master',
     'Other'
   ];
 
   const yearOptions = ['1st Year', '2nd Year', '3rd Year', '4th Year', '5th Year', 'Graduate'];
+
+  const showCustomDegreeField = formData.degreeProgram === 'Master' || formData.degreeProgram === 'Other';
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6 bg-white p-8 rounded-xl shadow-md border border-gray-100">
       <h3 className="text-xl font-semibold mb-6">Personal Information</h3>
       
       <div className="space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <Label htmlFor="firstName">First Name *</Label>
+            <Input
+              id="firstName"
+              name="firstName"
+              value={formData.firstName}
+              onChange={handleInputChange}
+              placeholder="Enter your first name"
+              required
+            />
+          </div>
+          
+          <div>
+            <Label htmlFor="familyName">Family Name *</Label>
+            <Input
+              id="familyName"
+              name="familyName"
+              value={formData.familyName}
+              onChange={handleInputChange}
+              placeholder="Enter your family name"
+              required
+            />
+          </div>
+        </div>
+        
         <div>
-          <Label htmlFor="fullName">Full Name *</Label>
+          <Label htmlFor="email">Email Address *</Label>
           <Input
-            id="fullName"
-            name="fullName"
-            value={formData.fullName}
+            id="email"
+            name="email"
+            type="email"
+            value={formData.email}
             onChange={handleInputChange}
-            placeholder="Enter your full name"
+            placeholder="Enter your email address"
+            required
+          />
+        </div>
+        
+        <div>
+          <Label htmlFor="phoneNumber">Phone Number *</Label>
+          <Input
+            id="phoneNumber"
+            name="phoneNumber"
+            type="tel"
+            value={formData.phoneNumber}
+            onChange={handleInputChange}
+            placeholder="Enter your phone number"
             required
           />
         </div>
@@ -136,6 +217,22 @@ const ApplyForm: React.FC<ApplyFormProps> = ({ positionTitle, applicationType })
             ))}
           </select>
         </div>
+        
+        {showCustomDegreeField && (
+          <div>
+            <Label htmlFor="customDegreeProgram">
+              If you selected 'Master' or 'Other', please specify (e.g., MSc + Study or Study name): *
+            </Label>
+            <Input
+              id="customDegreeProgram"
+              name="customDegreeProgram"
+              value={formData.customDegreeProgram}
+              onChange={handleInputChange}
+              placeholder="Please specify your degree program"
+              required
+            />
+          </div>
+        )}
         
         <div>
           <Label htmlFor="yearOfStudy">Year of Study *</Label>

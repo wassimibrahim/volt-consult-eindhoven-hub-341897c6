@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import AdminAuth from '../components/AdminAuth';
@@ -6,8 +7,29 @@ import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@
 import { Input } from '@/components/ui/input';
 import { FileText, Search, Download, UserCheck, UserX } from 'lucide-react';
 
-// Sample application data
-const sampleApplications = [
+// Define application type
+interface ApplicationType {
+  id: number;
+  fullName: string;
+  position: string;
+  type: 'volt' | 'project' | null;
+  date: string;
+  status: 'pending' | 'reviewed' | 'accepted' | 'rejected';
+  documents: string[];
+  details: {
+    firstName?: string;
+    familyName?: string;
+    birthDate: string;
+    degreeProgram: string;
+    yearOfStudy: string;
+    email?: string;
+    phoneNumber?: string;
+    linkedinProfile: string;
+  };
+}
+
+// Sample application data as fallback
+const sampleApplications: ApplicationType[] = [
   {
     id: 1,
     fullName: 'John Smith',
@@ -93,11 +115,37 @@ const statusColors: Record<string, string> = {
 };
 
 const AdminPage = () => {
-  const [applications, setApplications] = useState(sampleApplications);
-  const [selectedApplication, setSelectedApplication] = useState<typeof sampleApplications[0] | null>(null);
+  const [applications, setApplications] = useState<ApplicationType[]>([]);
+  const [selectedApplication, setSelectedApplication] = useState<ApplicationType | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState<'all' | 'volt' | 'project'>('all');
   const [filterStatus, setFilterStatus] = useState<'all' | 'pending' | 'reviewed' | 'accepted' | 'rejected'>('all');
+
+  // Load applications from localStorage on component mount
+  useEffect(() => {
+    const loadApplications = () => {
+      try {
+        // Get applications from localStorage
+        const storedApplications = localStorage.getItem('applications');
+        const parsedApplications = storedApplications ? JSON.parse(storedApplications) : [];
+        
+        // If there are stored applications, use them, otherwise use sample applications
+        if (parsedApplications && parsedApplications.length > 0) {
+          setApplications(parsedApplications);
+          console.log('Loaded applications from localStorage:', parsedApplications);
+        } else {
+          // If no stored applications, use the sample applications
+          setApplications(sampleApplications);
+          console.log('No stored applications found, using samples');
+        }
+      } catch (error) {
+        console.error('Error loading applications:', error);
+        setApplications(sampleApplications);
+      }
+    };
+
+    loadApplications();
+  }, []);
 
   const filteredApplications = applications.filter(app => {
     const matchesSearch = app.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -113,6 +161,9 @@ const AdminPage = () => {
       app.id === id ? { ...app, status } : app
     );
     setApplications(updatedApplications);
+    
+    // Also update in localStorage
+    localStorage.setItem('applications', JSON.stringify(updatedApplications));
     
     if (selectedApplication && selectedApplication.id === id) {
       setSelectedApplication({ ...selectedApplication, status });
@@ -255,6 +306,18 @@ const AdminPage = () => {
                         <p className="text-gray-500 text-sm">Full Name</p>
                         <p className="font-medium">{selectedApplication.fullName}</p>
                       </div>
+                      {selectedApplication.details.email && (
+                        <div>
+                          <p className="text-gray-500 text-sm">Email</p>
+                          <p>{selectedApplication.details.email}</p>
+                        </div>
+                      )}
+                      {selectedApplication.details.phoneNumber && (
+                        <div>
+                          <p className="text-gray-500 text-sm">Phone Number</p>
+                          <p>{selectedApplication.details.phoneNumber}</p>
+                        </div>
+                      )}
                       <div>
                         <p className="text-gray-500 text-sm">Birth Date</p>
                         <p>{new Date(selectedApplication.details.birthDate).toLocaleDateString()}</p>

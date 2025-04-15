@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Linkedin, Instagram, Twitter } from 'lucide-react';
+import { Linkedin, Instagram } from 'lucide-react';
 
 const Footer = () => {
   return (
@@ -23,7 +23,7 @@ const Footer = () => {
             
             <div className="flex items-center gap-4">
               <a 
-                href="https://linkedin.com" 
+                href="https://linkedin.com/company/volt-consulting-group-nl" 
                 target="_blank" 
                 rel="noopener noreferrer"
                 className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-[#F00000] transition-colors"
@@ -32,22 +32,13 @@ const Footer = () => {
                 <Linkedin size={18} />
               </a>
               <a 
-                href="https://instagram.com" 
+                href="https://www.instagram.com/voltconsultinggroup/profilecard/?igsh=cDB2d2c3amFsYWhm" 
                 target="_blank" 
                 rel="noopener noreferrer"
                 className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-[#F00000] transition-colors"
                 aria-label="Instagram"
               >
                 <Instagram size={18} />
-              </a>
-              <a 
-                href="https://twitter.com" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-[#F00000] transition-colors"
-                aria-label="Twitter"
-              >
-                <Twitter size={18} />
               </a>
             </div>
           </div>
