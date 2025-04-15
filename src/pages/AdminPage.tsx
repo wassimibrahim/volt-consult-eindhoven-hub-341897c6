@@ -7,15 +7,10 @@ import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
-import { FileText, Search, Download, UserCheck, UserX, Plus, Save, Trash, Calendar } from 'lucide-react';
+import { FileText, Search, Download, UserCheck, UserX, Plus, Save, Trash } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { toast } from '@/components/ui/use-toast';
-import { format, differenceInDays, differenceInHours, differenceInMinutes, isFuture, isPast } from 'date-fns';
-import { Calendar as CalendarIcon } from "lucide-react"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { Calendar } from "@/components/ui/calendar"
-import { cn } from "@/lib/utils"
 
 // Define application type
 interface ApplicationType {
@@ -49,7 +44,6 @@ interface PositionType {
   projectDescription?: string;
   preferredMajors?: string[];
   active: boolean;
-  deadline?: string;
 }
 
 // Sample application data as fallback
@@ -145,36 +139,40 @@ const AdminPage = () => {
   const [filterType, setFilterType] = useState<'all' | 'volt' | 'project'>('all');
   const [filterStatus, setFilterStatus] = useState<'all' | 'pending' | 'reviewed' | 'accepted' | 'rejected'>('all');
   
+  // State for positions management
   const [positions, setPositions] = useState<PositionType[]>([]);
   const [newPosition, setNewPosition] = useState<Partial<PositionType>>({
     title: '',
     description: '',
     requirements: [],
     type: 'volt',
-    active: true,
-    deadline: new Date().toISOString().split('T')[0]
+    active: true
   });
   const [reqInput, setReqInput] = useState('');
   const [majorInput, setMajorInput] = useState('');
   const [activeTab, setActiveTab] = useState<'applications' | 'positions'>('applications');
   const [positionTab, setPositionTab] = useState<'volt' | 'project'>('volt');
   const [editingPositionId, setEditingPositionId] = useState<number | null>(null);
-  const [deadlineDate, setDeadlineDate] = useState<Date | undefined>(new Date());
 
+  // Load applications and positions from localStorage on component mount
   useEffect(() => {
     const loadData = () => {
       try {
+        // Get applications from localStorage
         const storedApplications = localStorage.getItem('applications');
         const parsedApplications = storedApplications ? JSON.parse(storedApplications) : [];
         
+        // If there are stored applications, use them, otherwise use sample applications
         if (parsedApplications && parsedApplications.length > 0) {
           setApplications(parsedApplications);
           console.log('Loaded applications from localStorage:', parsedApplications);
         } else {
+          // If no stored applications, use the sample applications
           setApplications(sampleApplications);
           console.log('No stored applications found, using samples');
         }
 
+        // Get positions from localStorage
         const storedPositions = localStorage.getItem('positions');
         if (storedPositions) {
           setPositions(JSON.parse(storedPositions));
@@ -189,6 +187,7 @@ const AdminPage = () => {
     loadData();
   }, []);
 
+  // Function to save positions to localStorage whenever they change
   useEffect(() => {
     if (positions.length > 0) {
       localStorage.setItem('positions', JSON.stringify(positions));
@@ -210,6 +209,7 @@ const AdminPage = () => {
     );
     setApplications(updatedApplications);
     
+    // Also update in localStorage
     localStorage.setItem('applications', JSON.stringify(updatedApplications));
     
     if (selectedApplication && selectedApplication.id === id) {
@@ -256,24 +256,20 @@ const AdminPage = () => {
   };
 
   const handleSavePosition = () => {
-    if (!newPosition.title || !newPosition.description || !deadlineDate) {
+    // Validate required fields
+    if (!newPosition.title || !newPosition.description) {
       toast({
         title: "Missing Information",
-        description: "Please fill in all required fields including the application deadline.",
+        description: "Please fill in all required fields.",
         variant: "destructive",
       });
       return;
     }
 
-    const formattedDeadline = deadlineDate.toISOString();
-
     if (editingPositionId !== null) {
+      // Update existing position
       const updatedPositions = positions.map(pos => 
-        pos.id === editingPositionId ? { 
-          ...newPosition, 
-          id: editingPositionId,
-          deadline: formattedDeadline 
-        } as PositionType : pos
+        pos.id === editingPositionId ? { ...newPosition, id: editingPositionId } as PositionType : pos
       );
       setPositions(updatedPositions);
       toast({
@@ -281,12 +277,12 @@ const AdminPage = () => {
         description: `${newPosition.title} has been updated successfully.`,
       });
     } else {
+      // Add new position
       const newId = positions.length > 0 ? Math.max(...positions.map(p => p.id)) + 1 : 1;
       const positionToAdd = { 
         ...newPosition, 
         id: newId,
-        active: true,
-        deadline: formattedDeadline
+        active: true
       } as PositionType;
       
       setPositions([...positions, positionToAdd]);
@@ -296,6 +292,7 @@ const AdminPage = () => {
       });
     }
 
+    // Reset form
     setNewPosition({
       title: '',
       description: '',
@@ -303,7 +300,6 @@ const AdminPage = () => {
       type: positionTab,
       active: true
     });
-    setDeadlineDate(new Date());
     setEditingPositionId(null);
   };
 
@@ -311,12 +307,6 @@ const AdminPage = () => {
     setNewPosition(position);
     setEditingPositionId(position.id);
     setPositionTab(position.type);
-    
-    if (position.deadline) {
-      setDeadlineDate(new Date(position.deadline));
-    } else {
-      setDeadlineDate(new Date());
-    }
   };
 
   const handleDeletePosition = (id: number) => {
@@ -345,19 +335,6 @@ const AdminPage = () => {
       pos.id === id ? { ...pos, active: !pos.active } : pos
     );
     setPositions(updatedPositions);
-  };
-
-  const formatCountdown = (deadlineStr: string | undefined) => {
-    if (!deadlineStr) return "No deadline set";
-    
-    const deadline = new Date(deadlineStr);
-    if (!isFuture(deadline)) return "Application closed";
-    
-    const days = differenceInDays(deadline, new Date());
-    const hours = differenceInHours(deadline, new Date()) % 24;
-    const minutes = differenceInMinutes(deadline, new Date()) % 60;
-    
-    return `${days}d ${hours}h ${minutes}m`;
   };
 
   const filteredPositions = positions.filter(pos => pos.type === positionTab);
@@ -474,6 +451,7 @@ const AdminPage = () => {
                 
                 <TabsContent value="positions">
                   <div className="grid md:grid-cols-2 gap-6">
+                    {/* Position Form Section */}
                     <div className="bg-white p-6 rounded-lg border border-gray-200">
                       <Tabs defaultValue="volt" onValueChange={(value) => setPositionTab(value as 'volt' | 'project')}>
                         <TabsList className="mb-4">
@@ -506,35 +484,6 @@ const AdminPage = () => {
                                 placeholder="Describe the position and responsibilities"
                                 rows={4}
                               />
-                            </div>
-                            
-                            <div>
-                              <Label htmlFor="deadline">Application Deadline*</Label>
-                              <Popover>
-                                <PopoverTrigger asChild>
-                                  <Button
-                                    id="deadline"
-                                    variant={"outline"}
-                                    className={cn(
-                                      "w-full justify-start text-left font-normal",
-                                      !deadlineDate && "text-muted-foreground"
-                                    )}
-                                  >
-                                    <CalendarIcon className="mr-2 h-4 w-4" />
-                                    {deadlineDate ? format(deadlineDate, "PPP") : <span>Pick a date</span>}
-                                  </Button>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-auto p-0" align="start">
-                                  <Calendar
-                                    mode="single"
-                                    selected={deadlineDate}
-                                    onSelect={setDeadlineDate}
-                                    disabled={(date) => date < new Date()}
-                                    initialFocus
-                                    className={cn("p-3 pointer-events-auto")}
-                                  />
-                                </PopoverContent>
-                              </Popover>
                             </div>
                             
                             <div>
@@ -625,35 +574,6 @@ const AdminPage = () => {
                                 rows={3}
                               />
                             </div>
-
-                            <div>
-                              <Label htmlFor="deadline">Application Deadline*</Label>
-                              <Popover>
-                                <PopoverTrigger asChild>
-                                  <Button
-                                    id="deadline"
-                                    variant={"outline"}
-                                    className={cn(
-                                      "w-full justify-start text-left font-normal",
-                                      !deadlineDate && "text-muted-foreground"
-                                    )}
-                                  >
-                                    <CalendarIcon className="mr-2 h-4 w-4" />
-                                    {deadlineDate ? format(deadlineDate, "PPP") : <span>Pick a date</span>}
-                                  </Button>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-auto p-0" align="start">
-                                  <Calendar
-                                    mode="single"
-                                    selected={deadlineDate}
-                                    onSelect={setDeadlineDate}
-                                    disabled={(date) => date < new Date()}
-                                    initialFocus
-                                    className={cn("p-3 pointer-events-auto")}
-                                  />
-                                </PopoverContent>
-                              </Popover>
-                            </div>
                             
                             <div>
                               <Label>Preferred Majors</Label>
@@ -698,6 +618,7 @@ const AdminPage = () => {
                       </Tabs>
                     </div>
                     
+                    {/* Positions List Section */}
                     <div>
                       <h3 className="font-semibold text-lg mb-4">
                         {positionTab === 'volt' ? 'Volt Positions' : 'Project Positions'}
@@ -742,27 +663,6 @@ const AdminPage = () => {
                                   <span className="font-medium">Company:</span> {position.companyName}
                                 </div>
                               )}
-
-                              <div className="flex items-center mt-2 text-sm">
-                                <Calendar className="h-4 w-4 mr-1 text-gray-500" />
-                                <span className="font-medium mr-2">Application deadline:</span>
-                                {position.deadline ? (
-                                  <>
-                                    <span className="text-gray-500 mr-2">
-                                      {format(new Date(position.deadline), "PPP")}
-                                    </span>
-                                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                                      isPast(new Date(position.deadline)) 
-                                        ? 'bg-red-100 text-red-800' 
-                                        : 'bg-blue-100 text-blue-800'
-                                    }`}>
-                                      {formatCountdown(position.deadline)}
-                                    </span>
-                                  </>
-                                ) : (
-                                  <span className="text-gray-500">Not set</span>
-                                )}
-                              </div>
                               
                               {position.requirements && position.requirements.length > 0 && (
                                 <div className="mt-2">
