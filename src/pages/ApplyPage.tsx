@@ -20,7 +20,7 @@ type PositionType = {
 };
 
 // Fallback positions if none are found in localStorage
-const fallbackVoltPositions = [
+const fallbackVoltPositions: PositionType[] = [
   {
     id: 1,
     title: 'Technology Consultant',
