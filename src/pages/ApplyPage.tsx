@@ -1,80 +1,59 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { ChevronDown, ChevronRight, ChevronLeft } from 'lucide-react';
+import { ChevronDown, ChevronRight, ChevronLeft, Calendar } from 'lucide-react';
 import ApplyForm from '../components/ApplyForm';
+import { differenceInDays, differenceInHours, differenceInMinutes, isFuture, isPast, format } from 'date-fns';
 
 type PositionType = {
-  id: string;
+  id: number;
   title: string;
   description: string;
   requirements?: string[];
   preferredMajors?: string[];
+  type: 'volt' | 'project';
+  companyName?: string;
+  projectDescription?: string;
+  active: boolean;
+  deadline?: string;
 };
 
-const voltPositions: PositionType[] = [
+const fallbackVoltPositions: PositionType[] = [
   {
-    id: 'consultant',
+    id: 1,
     title: 'Technology Consultant',
     description: 'As a Technology Consultant at Volt, you will collaborate with clients to develop strategic technology solutions, conduct research, and implement innovative approaches to complex technical challenges.',
-    requirements: ['Strong analytical skills', 'Technical background or interest', 'Excellent communication', 'Problem-solving aptitude']
+    requirements: ['Strong analytical skills', 'Technical background or interest', 'Excellent communication', 'Problem-solving aptitude'],
+    type: 'volt',
+    active: true,
+    deadline: new Date(Date.now() + 1000 * 60 * 60 * 24 * 14).toISOString()
   },
   {
-    id: 'data-analyst',
+    id: 2,
     title: 'Data Analyst',
     description: 'Data Analysts at Volt process and interpret complex data sets, create visualizations, extract insights, and develop data-driven recommendations for our clients.',
-    requirements: ['Experience with data analysis tools', 'Statistical knowledge', 'Programming skills (Python/R preferable)', 'Attention to detail']
-  },
-  {
-    id: 'developer',
-    title: 'Software Developer',
-    description: 'Software Developers design, build, and maintain efficient, reusable, and reliable code for our client projects, implementing cutting-edge solutions for real-world problems.',
-    requirements: ['Proficiency in programming languages', 'Knowledge of software development principles', 'Problem-solving skills', 'Teamwork']
-  },
-  {
-    id: 'project-manager',
-    title: 'Project Manager',
-    description: 'Project Managers oversee the planning, execution, and closure of client projects, ensuring deliverables meet requirements within time and budget constraints.',
-    requirements: ['Organizational skills', 'Leadership abilities', 'Communication skills', 'Experience in project coordination']
-  }
-];
-
-const projectPositions = [
-  {
-    company: 'Company X',
-    description: 'A leading technology firm specializing in AI-driven solutions for the healthcare industry.',
-    project: 'Development of an AI algorithm to predict patient readmission risks based on electronic health records.',
-    positions: [
-      {
-        id: 'data-scientist',
-        title: 'Data Scientist',
-        description: 'Work with healthcare data to develop predictive models for patient readmission.',
-        preferredMajors: ['Computer Science', 'Data Science', 'Applied Mathematics', 'Healthcare Informatics'],
-        requirements: []
-      },
-      {
-        id: 'ml-engineer',
-        title: 'Machine Learning Engineer',
-        description: 'Implement and optimize machine learning algorithms for the healthcare prediction system.',
-        preferredMajors: ['Computer Science', 'AI', 'Software Engineering'],
-        requirements: []
-      },
-      {
-        id: 'ui-designer',
-        title: 'UI/UX Designer',
-        description: 'Design intuitive interfaces for healthcare professionals to interact with the prediction system.',
-        preferredMajors: ['Interaction Design', 'Human-Computer Interaction', 'Psychology', 'Design'],
-        requirements: []
-      }
-    ]
+    requirements: ['Experience with data analysis tools', 'Statistical knowledge', 'Programming skills (Python/R preferable)', 'Attention to detail'],
+    type: 'volt',
+    active: true,
+    deadline: new Date(Date.now() + 1000 * 60 * 60 * 24 * 30).toISOString()
   }
 ];
 
 const ApplyPage = () => {
   const [selectedType, setSelectedType] = useState<'volt' | 'project' | null>(null);
   const [selectedPosition, setSelectedPosition] = useState<PositionType | null>(null);
+  const [positions, setPositions] = useState<PositionType[]>([]);
+  
+  useEffect(() => {
+    const storedPositions = localStorage.getItem('positions');
+    if (storedPositions) {
+      setPositions(JSON.parse(storedPositions));
+    } else {
+      setPositions(fallbackVoltPositions);
+    }
+  }, []);
 
   const handleTypeSelect = (type: 'volt' | 'project') => {
     setSelectedType(type);
@@ -84,6 +63,58 @@ const ApplyPage = () => {
   const handlePositionSelect = (position: PositionType) => {
     setSelectedPosition(position);
   };
+
+  const formatCountdown = (deadlineStr: string | undefined) => {
+    if (!deadlineStr) return "No deadline set";
+    
+    const deadline = new Date(deadlineStr);
+    if (!isFuture(deadline)) return "Application closed";
+    
+    const days = differenceInDays(deadline, new Date());
+    const hours = differenceInHours(deadline, new Date()) % 24;
+    const minutes = differenceInMinutes(deadline, new Date()) % 60;
+    
+    return `${days}d ${hours}h ${minutes}m remaining`;
+  };
+
+  const isApplicationClosed = (deadline?: string) => {
+    if (!deadline) return false;
+    return isPast(new Date(deadline));
+  };
+
+  const voltPositions = positions
+    .filter(pos => pos.type === 'volt' && pos.active)
+    .sort((a, b) => {
+      if (a.deadline && b.deadline) {
+        return new Date(a.deadline).getTime() - new Date(b.deadline).getTime();
+      }
+      return 0;
+    });
+  
+  const projectPositions = positions
+    .filter(pos => pos.type === 'project' && pos.active)
+    .reduce((acc, position) => {
+      const companyName = position.companyName || 'Unknown Company';
+      const existingCompany = acc.find(company => company.company === companyName);
+      
+      if (existingCompany) {
+        existingCompany.positions.push(position);
+      } else {
+        acc.push({
+          company: companyName,
+          description: position.projectDescription || '',
+          project: position.projectDescription || '',
+          positions: [position]
+        });
+      }
+      
+      return acc;
+    }, [] as Array<{
+      company: string;
+      description: string;
+      project: string;
+      positions: PositionType[];
+    }>);
 
   return (
     <div className="min-h-screen bg-white">
@@ -142,33 +173,73 @@ const ApplyPage = () => {
               </p>
 
               <div className="space-y-4">
-                {voltPositions.map((position) => (
-                  <Collapsible key={position.id} className="border border-gray-200 rounded-lg">
-                    <div className="flex justify-between items-center p-4 cursor-pointer" onClick={() => handlePositionSelect(position)}>
-                      <h3 className="font-semibold text-lg">{position.title}</h3>
-                      <CollapsibleTrigger className="hover:bg-gray-100 p-2 rounded-full">
-                        <ChevronDown size={20} />
-                      </CollapsibleTrigger>
-                    </div>
-                    <CollapsibleContent className="px-4 pb-4">
-                      <p className="text-volt-text/80 mb-4">{position.description}</p>
-                      <div className="mb-4">
-                        <h4 className="font-medium mb-2">Requirements:</h4>
-                        <ul className="list-disc pl-5 space-y-1">
-                          {position.requirements?.map((req, idx) => (
-                            <li key={idx} className="text-volt-text/80">{req}</li>
-                          ))}
-                        </ul>
+                {voltPositions.length > 0 ? (
+                  voltPositions.map((position) => (
+                    <Collapsible key={position.id} className="border border-gray-200 rounded-lg">
+                      <div className="flex justify-between items-center p-4 cursor-pointer" onClick={() => handlePositionSelect(position)}>
+                        <div>
+                          <h3 className="font-semibold text-lg">{position.title}</h3>
+                          {position.deadline && (
+                            <div className="flex items-center mt-1 text-sm">
+                              <Calendar className="h-3 w-3 mr-1 text-gray-500" />
+                              <span className={`text-sm ${
+                                isApplicationClosed(position.deadline) 
+                                  ? 'text-red-600' 
+                                  : 'text-blue-600'
+                              }`}>
+                                {formatCountdown(position.deadline)}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                        <CollapsibleTrigger className="hover:bg-gray-100 p-2 rounded-full">
+                          <ChevronDown size={20} />
+                        </CollapsibleTrigger>
                       </div>
-                      <button 
-                        className="bg-[#F00000] text-white px-6 py-2 rounded-md hover:bg-[#F00000]/90"
-                        onClick={() => handlePositionSelect(position)}
-                      >
-                        Apply for this Position
-                      </button>
-                    </CollapsibleContent>
-                  </Collapsible>
-                ))}
+                      <CollapsibleContent className="px-4 pb-4">
+                        <p className="text-volt-text/80 mb-4">{position.description}</p>
+                        {position.requirements && position.requirements.length > 0 && (
+                          <div className="mb-4">
+                            <h4 className="font-medium mb-2">Requirements:</h4>
+                            <ul className="list-disc pl-5 space-y-1">
+                              {position.requirements.map((req, idx) => (
+                                <li key={idx} className="text-volt-text/80">{req}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                        {position.deadline && (
+                          <div className="mb-4">
+                            <h4 className="font-medium mb-2">Application Deadline:</h4>
+                            <div className="flex items-center">
+                              <Calendar className="h-4 w-4 mr-2 text-gray-500" />
+                              <span>{format(new Date(position.deadline), "PPP")}</span>
+                              <span className="ml-2 px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                {formatCountdown(position.deadline)}
+                              </span>
+                            </div>
+                          </div>
+                        )}
+                        <button 
+                          className={`${
+                            isApplicationClosed(position.deadline)
+                              ? 'bg-gray-400 cursor-not-allowed'
+                              : 'bg-[#F00000] hover:bg-[#F00000]/90'
+                          } text-white px-6 py-2 rounded-md`}
+                          onClick={() => !isApplicationClosed(position.deadline) && handlePositionSelect(position)}
+                          disabled={isApplicationClosed(position.deadline)}
+                        >
+                          {isApplicationClosed(position.deadline) ? 'Application Closed' : 'Apply for this Position'}
+                        </button>
+                      </CollapsibleContent>
+                    </Collapsible>
+                  ))
+                ) : (
+                  <div className="text-center py-12 border border-dashed border-gray-300 rounded-lg">
+                    <p className="text-gray-500">No positions are currently available.</p>
+                    <p className="text-sm text-gray-400 mt-1">Please check back later or contact us for more information.</p>
+                  </div>
+                )}
               </div>
             </div>
           ) : selectedType === 'project' && !selectedPosition ? (
@@ -185,46 +256,86 @@ const ApplyPage = () => {
                 Explore specific projects from our partner companies and organizations.
               </p>
 
-              {projectPositions.map((project, idx) => (
-                <div key={idx} className="mb-10 border border-gray-200 rounded-xl p-6">
-                  <h3 className="heading-sm mb-2">{project.company}</h3>
-                  <p className="text-volt-text/80 mb-4">{project.description}</p>
-                  <div className="bg-gray-50 p-4 rounded-lg mb-6">
-                    <h4 className="font-semibold mb-2">Project:</h4>
-                    <p className="text-volt-text/80">{project.project}</p>
-                  </div>
-                  <h4 className="font-semibold mb-4">Available Positions:</h4>
-                  <div className="space-y-4">
-                    {project.positions.map((position) => (
-                      <Collapsible key={position.id} className="border border-gray-200 rounded-lg">
-                        <div className="flex justify-between items-center p-4 cursor-pointer" onClick={() => handlePositionSelect(position)}>
-                          <h3 className="font-semibold text-lg">{position.title}</h3>
-                          <CollapsibleTrigger className="hover:bg-gray-100 p-2 rounded-full">
-                            <ChevronDown size={20} />
-                          </CollapsibleTrigger>
-                        </div>
-                        <CollapsibleContent className="px-4 pb-4">
-                          <p className="text-volt-text/80 mb-4">{position.description}</p>
-                          <div className="mb-4">
-                            <h4 className="font-medium mb-2">Preferred Majors:</h4>
-                            <ul className="list-disc pl-5 space-y-1">
-                              {position.preferredMajors?.map((major, idx) => (
-                                <li key={idx} className="text-volt-text/80">{major}</li>
-                              ))}
-                            </ul>
+              {projectPositions.length > 0 ? (
+                projectPositions.map((project, idx) => (
+                  <div key={idx} className="mb-10 border border-gray-200 rounded-xl p-6">
+                    <h3 className="heading-sm mb-2">{project.company}</h3>
+                    <p className="text-volt-text/80 mb-4">{project.description}</p>
+                    <div className="bg-gray-50 p-4 rounded-lg mb-6">
+                      <h4 className="font-semibold mb-2">Project:</h4>
+                      <p className="text-volt-text/80">{project.project}</p>
+                    </div>
+                    <h4 className="font-semibold mb-4">Available Positions:</h4>
+                    <div className="space-y-4">
+                      {project.positions.map((position) => (
+                        <Collapsible key={position.id} className="border border-gray-200 rounded-lg">
+                          <div className="flex justify-between items-center p-4 cursor-pointer" onClick={() => handlePositionSelect(position)}>
+                            <div>
+                              <h3 className="font-semibold text-lg">{position.title}</h3>
+                              {position.deadline && (
+                                <div className="flex items-center mt-1 text-sm">
+                                  <Calendar className="h-3 w-3 mr-1 text-gray-500" />
+                                  <span className={`text-sm ${
+                                    isApplicationClosed(position.deadline) 
+                                      ? 'text-red-600' 
+                                      : 'text-blue-600'
+                                  }`}>
+                                    {formatCountdown(position.deadline)}
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                            <CollapsibleTrigger className="hover:bg-gray-100 p-2 rounded-full">
+                              <ChevronDown size={20} />
+                            </CollapsibleTrigger>
                           </div>
-                          <button 
-                            className="bg-[#F00000] text-white px-6 py-2 rounded-md hover:bg-[#F00000]/90"
-                            onClick={() => handlePositionSelect(position)}
-                          >
-                            Apply for this Position
-                          </button>
-                        </CollapsibleContent>
-                      </Collapsible>
-                    ))}
+                          <CollapsibleContent className="px-4 pb-4">
+                            <p className="text-volt-text/80 mb-4">{position.description}</p>
+                            {position.preferredMajors && position.preferredMajors.length > 0 && (
+                              <div className="mb-4">
+                                <h4 className="font-medium mb-2">Preferred Majors:</h4>
+                                <ul className="list-disc pl-5 space-y-1">
+                                  {position.preferredMajors.map((major, idx) => (
+                                    <li key={idx} className="text-volt-text/80">{major}</li>
+                                  ))}
+                                </ul>
+                              </div>
+                            )}
+                            {position.deadline && (
+                              <div className="mb-4">
+                                <h4 className="font-medium mb-2">Application Deadline:</h4>
+                                <div className="flex items-center">
+                                  <Calendar className="h-4 w-4 mr-2 text-gray-500" />
+                                  <span>{format(new Date(position.deadline), "PPP")}</span>
+                                  <span className="ml-2 px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                    {formatCountdown(position.deadline)}
+                                  </span>
+                                </div>
+                              </div>
+                            )}
+                            <button 
+                              className={`${
+                                isApplicationClosed(position.deadline)
+                                  ? 'bg-gray-400 cursor-not-allowed'
+                                  : 'bg-[#F00000] hover:bg-[#F00000]/90'
+                              } text-white px-6 py-2 rounded-md`}
+                              onClick={() => !isApplicationClosed(position.deadline) && handlePositionSelect(position)}
+                              disabled={isApplicationClosed(position.deadline)}
+                            >
+                              {isApplicationClosed(position.deadline) ? 'Application Closed' : 'Apply for this Position'}
+                            </button>
+                          </CollapsibleContent>
+                        </Collapsible>
+                      ))}
+                    </div>
                   </div>
+                ))
+              ) : (
+                <div className="text-center py-12 border border-dashed border-gray-300 rounded-lg">
+                  <p className="text-gray-500">No project positions are currently available.</p>
+                  <p className="text-sm text-gray-400 mt-1">Please check back later or contact us for more information.</p>
                 </div>
-              ))}
+              )}
             </div>
           ) : selectedPosition ? (
             <div className="max-w-3xl mx-auto">

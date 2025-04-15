@@ -64,6 +64,11 @@ const Hero = () => {
             </div>
             <h3 className="text-xl font-bold mb-3 text-volt-dark">World's First Student-Run Tech Consultancy Firm</h3>
             <p className="text-volt-text">
+              <img 
+                src="/lovable-uploads/25790141-6595-443d-a1e1-724279cc0987.png"
+                alt="Eindhoven skyline"
+                className="w-full h-auto rounded-md mb-3"
+              />
               Volt Consulting Group proudly stands as the first student-run tech consultancy firm in the world, dedicated exclusively to strategic and technological impact. With bold ambitions to expand our presence to every major technical university globally, our mission is clear: to create lasting value, abundant growth, and enhanced resilience for organizations across the Brainport region and beyond.
             </p>
           </div>
