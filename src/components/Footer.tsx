@@ -51,7 +51,7 @@ const Footer = () => {
           </div>
           
           <div>
-            <h3 className="font-semibold mb-4 text-lg">Resources</h3>
+            <h3 className="font-semibold mb-4 text-lg">Upcoming Dates</h3>
             <ul className="space-y-3 text-white/70">
               <li><Link to="/apply" className="hover:text-white transition-colors">Apply</Link></li>
               <li><Link to="/contact" className="hover:text-white transition-colors">Contact</Link></li>
@@ -64,9 +64,9 @@ const Footer = () => {
           <div>
             <h3 className="font-semibold mb-4 text-lg">Contact</h3>
             <ul className="space-y-3 text-white/70">
-              <li>Eindhoven University of Technology</li>
-              <li>5612 AZ Eindhoven</li>
-              <li>The Netherlands</li>
+              <li>Atlas 5.328</li>
+              <li>Groene Loper 3</li>
+              <li>5612 AE Eindhoven</li>
               <li className="pt-2"><a href="mailto:info@voltconsulting.nl" className="hover:text-white transition-colors">info@voltconsulting.nl</a></li>
             </ul>
           </div>
