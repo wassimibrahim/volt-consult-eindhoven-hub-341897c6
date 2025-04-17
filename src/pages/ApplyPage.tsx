@@ -1,11 +1,11 @@
+
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { ChevronDown, ChevronRight, ChevronLeft, Calendar } from 'lucide-react';
+import { ChevronDown, ChevronRight, ChevronLeft } from 'lucide-react';
 import ApplyForm from '../components/ApplyForm';
-import { differenceInDays, differenceInHours, differenceInMinutes, isFuture, isPast, format } from 'date-fns';
 
 type PositionType = {
   id: number;
@@ -17,18 +17,17 @@ type PositionType = {
   companyName?: string;
   projectDescription?: string;
   active: boolean;
-  deadline?: string;
 };
 
-const fallbackVoltPositions: PositionType[] = [
+// Fallback positions if none are found in localStorage
+const fallbackVoltPositions = [
   {
     id: 1,
     title: 'Technology Consultant',
     description: 'As a Technology Consultant at Volt, you will collaborate with clients to develop strategic technology solutions, conduct research, and implement innovative approaches to complex technical challenges.',
     requirements: ['Strong analytical skills', 'Technical background or interest', 'Excellent communication', 'Problem-solving aptitude'],
     type: 'volt',
-    active: true,
-    deadline: new Date(Date.now() + 1000 * 60 * 60 * 24 * 14).toISOString()
+    active: true
   },
   {
     id: 2,
@@ -36,8 +35,7 @@ const fallbackVoltPositions: PositionType[] = [
     description: 'Data Analysts at Volt process and interpret complex data sets, create visualizations, extract insights, and develop data-driven recommendations for our clients.',
     requirements: ['Experience with data analysis tools', 'Statistical knowledge', 'Programming skills (Python/R preferable)', 'Attention to detail'],
     type: 'volt',
-    active: true,
-    deadline: new Date(Date.now() + 1000 * 60 * 60 * 24 * 30).toISOString()
+    active: true
   }
 ];
 
@@ -46,11 +44,13 @@ const ApplyPage = () => {
   const [selectedPosition, setSelectedPosition] = useState<PositionType | null>(null);
   const [positions, setPositions] = useState<PositionType[]>([]);
   
+  // Load positions from localStorage
   useEffect(() => {
     const storedPositions = localStorage.getItem('positions');
     if (storedPositions) {
       setPositions(JSON.parse(storedPositions));
     } else {
+      // Use fallback positions if none found in localStorage
       setPositions(fallbackVoltPositions);
     }
   }, []);
@@ -64,33 +64,10 @@ const ApplyPage = () => {
     setSelectedPosition(position);
   };
 
-  const formatCountdown = (deadlineStr: string | undefined) => {
-    if (!deadlineStr) return "No deadline set";
-    
-    const deadline = new Date(deadlineStr);
-    if (!isFuture(deadline)) return "Application closed";
-    
-    const days = differenceInDays(deadline, new Date());
-    const hours = differenceInHours(deadline, new Date()) % 24;
-    const minutes = differenceInMinutes(deadline, new Date()) % 60;
-    
-    return `${days}d ${hours}h ${minutes}m remaining`;
-  };
-
-  const isApplicationClosed = (deadline?: string) => {
-    if (!deadline) return false;
-    return isPast(new Date(deadline));
-  };
-
-  const voltPositions = positions
-    .filter(pos => pos.type === 'volt' && pos.active)
-    .sort((a, b) => {
-      if (a.deadline && b.deadline) {
-        return new Date(a.deadline).getTime() - new Date(b.deadline).getTime();
-      }
-      return 0;
-    });
+  // Filter positions by type and active status
+  const voltPositions = positions.filter(pos => pos.type === 'volt' && pos.active);
   
+  // Group project positions by company
   const projectPositions = positions
     .filter(pos => pos.type === 'project' && pos.active)
     .reduce((acc, position) => {
@@ -177,21 +154,7 @@ const ApplyPage = () => {
                   voltPositions.map((position) => (
                     <Collapsible key={position.id} className="border border-gray-200 rounded-lg">
                       <div className="flex justify-between items-center p-4 cursor-pointer" onClick={() => handlePositionSelect(position)}>
-                        <div>
-                          <h3 className="font-semibold text-lg">{position.title}</h3>
-                          {position.deadline && (
-                            <div className="flex items-center mt-1 text-sm">
-                              <Calendar className="h-3 w-3 mr-1 text-gray-500" />
-                              <span className={`text-sm ${
-                                isApplicationClosed(position.deadline) 
-                                  ? 'text-red-600' 
-                                  : 'text-blue-600'
-                              }`}>
-                                {formatCountdown(position.deadline)}
-                              </span>
-                            </div>
-                          )}
-                        </div>
+                        <h3 className="font-semibold text-lg">{position.title}</h3>
                         <CollapsibleTrigger className="hover:bg-gray-100 p-2 rounded-full">
                           <ChevronDown size={20} />
                         </CollapsibleTrigger>
@@ -208,28 +171,11 @@ const ApplyPage = () => {
                             </ul>
                           </div>
                         )}
-                        {position.deadline && (
-                          <div className="mb-4">
-                            <h4 className="font-medium mb-2">Application Deadline:</h4>
-                            <div className="flex items-center">
-                              <Calendar className="h-4 w-4 mr-2 text-gray-500" />
-                              <span>{format(new Date(position.deadline), "PPP")}</span>
-                              <span className="ml-2 px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                {formatCountdown(position.deadline)}
-                              </span>
-                            </div>
-                          </div>
-                        )}
                         <button 
-                          className={`${
-                            isApplicationClosed(position.deadline)
-                              ? 'bg-gray-400 cursor-not-allowed'
-                              : 'bg-[#F00000] hover:bg-[#F00000]/90'
-                          } text-white px-6 py-2 rounded-md`}
-                          onClick={() => !isApplicationClosed(position.deadline) && handlePositionSelect(position)}
-                          disabled={isApplicationClosed(position.deadline)}
+                          className="bg-[#F00000] text-white px-6 py-2 rounded-md hover:bg-[#F00000]/90"
+                          onClick={() => handlePositionSelect(position)}
                         >
-                          {isApplicationClosed(position.deadline) ? 'Application Closed' : 'Apply for this Position'}
+                          Apply for this Position
                         </button>
                       </CollapsibleContent>
                     </Collapsible>
@@ -270,21 +216,7 @@ const ApplyPage = () => {
                       {project.positions.map((position) => (
                         <Collapsible key={position.id} className="border border-gray-200 rounded-lg">
                           <div className="flex justify-between items-center p-4 cursor-pointer" onClick={() => handlePositionSelect(position)}>
-                            <div>
-                              <h3 className="font-semibold text-lg">{position.title}</h3>
-                              {position.deadline && (
-                                <div className="flex items-center mt-1 text-sm">
-                                  <Calendar className="h-3 w-3 mr-1 text-gray-500" />
-                                  <span className={`text-sm ${
-                                    isApplicationClosed(position.deadline) 
-                                      ? 'text-red-600' 
-                                      : 'text-blue-600'
-                                  }`}>
-                                    {formatCountdown(position.deadline)}
-                                  </span>
-                                </div>
-                              )}
-                            </div>
+                            <h3 className="font-semibold text-lg">{position.title}</h3>
                             <CollapsibleTrigger className="hover:bg-gray-100 p-2 rounded-full">
                               <ChevronDown size={20} />
                             </CollapsibleTrigger>
@@ -301,28 +233,11 @@ const ApplyPage = () => {
                                 </ul>
                               </div>
                             )}
-                            {position.deadline && (
-                              <div className="mb-4">
-                                <h4 className="font-medium mb-2">Application Deadline:</h4>
-                                <div className="flex items-center">
-                                  <Calendar className="h-4 w-4 mr-2 text-gray-500" />
-                                  <span>{format(new Date(position.deadline), "PPP")}</span>
-                                  <span className="ml-2 px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                    {formatCountdown(position.deadline)}
-                                  </span>
-                                </div>
-                              </div>
-                            )}
                             <button 
-                              className={`${
-                                isApplicationClosed(position.deadline)
-                                  ? 'bg-gray-400 cursor-not-allowed'
-                                  : 'bg-[#F00000] hover:bg-[#F00000]/90'
-                              } text-white px-6 py-2 rounded-md`}
-                              onClick={() => !isApplicationClosed(position.deadline) && handlePositionSelect(position)}
-                              disabled={isApplicationClosed(position.deadline)}
+                              className="bg-[#F00000] text-white px-6 py-2 rounded-md hover:bg-[#F00000]/90"
+                              onClick={() => handlePositionSelect(position)}
                             >
-                              {isApplicationClosed(position.deadline) ? 'Application Closed' : 'Apply for this Position'}
+                              Apply for this Position
                             </button>
                           </CollapsibleContent>
                         </Collapsible>
