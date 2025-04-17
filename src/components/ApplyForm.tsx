@@ -1,7 +1,7 @@
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from '@/components/ui/use-toast';
@@ -44,14 +44,34 @@ const ApplyForm: React.FC<ApplyFormProps> = ({ positionTitle, applicationType })
   const handleCheckboxChange = (checked: boolean) => {
     setFormData(prev => ({ ...prev, agreeToTerms: checked }));
   };
+  
+  // Function to convert file to base64
+  const fileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = error => reject(error);
+    });
+  };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setSubmitting(true);
     
     try {
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      // Convert files to base64
+      const documentData: string[] = [];
+      
+      if (formData.cv) {
+        const cvBase64 = await fileToBase64(formData.cv);
+        documentData.push(cvBase64);
+      }
+      
+      if (formData.motivationLetter) {
+        const motivationLetterBase64 = await fileToBase64(formData.motivationLetter);
+        documentData.push(motivationLetterBase64);
+      }
       
       // Get existing applications from localStorage or initialize empty array
       const existingApplications = JSON.parse(localStorage.getItem('applications') || '[]');
@@ -65,6 +85,7 @@ const ApplyForm: React.FC<ApplyFormProps> = ({ positionTitle, applicationType })
         date: new Date().toISOString().split('T')[0],
         status: 'pending',
         documents: ['CV', 'Motivation Letter'],
+        documentData: documentData, // Store base64 encoded files
         details: {
           firstName: formData.firstName,
           familyName: formData.familyName,
@@ -83,8 +104,7 @@ const ApplyForm: React.FC<ApplyFormProps> = ({ positionTitle, applicationType })
       localStorage.setItem('applications', JSON.stringify([...existingApplications, newApplication]));
       
       // Log for debugging
-      console.log('Application submitted:', newApplication);
-      console.log('All applications:', JSON.parse(localStorage.getItem('applications') || '[]'));
+      console.log('Application submitted:', { ...newApplication, documentData: 'Base64 data (omitted for log)' });
       
       // Show success message
       toast({
@@ -201,7 +221,7 @@ const ApplyForm: React.FC<ApplyFormProps> = ({ positionTitle, applicationType })
         </div>
         
         <div>
-          <Label htmlFor="degreeProgram">Degree Programme *</Label>
+          <Label htmlFor="degreeProgram">Degree Program *</Label>
           <select
             id="degreeProgram"
             name="degreeProgram"

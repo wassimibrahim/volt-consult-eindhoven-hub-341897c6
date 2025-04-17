@@ -4,8 +4,9 @@ import { Link } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { ChevronDown, ChevronRight, ChevronLeft } from 'lucide-react';
+import { ChevronDown, ChevronRight, ChevronLeft, Clock } from 'lucide-react';
 import ApplyForm from '../components/ApplyForm';
+import { differenceInDays, differenceInHours, differenceInMinutes } from 'date-fns';
 
 type PositionType = {
   id: number;
@@ -17,6 +18,8 @@ type PositionType = {
   companyName?: string;
   projectDescription?: string;
   active: boolean;
+  deadline?: string;
+  publishedDate?: string;
 };
 
 // Fallback positions if none are found in localStorage
@@ -43,6 +46,7 @@ const ApplyPage = () => {
   const [selectedType, setSelectedType] = useState<'volt' | 'project' | null>(null);
   const [selectedPosition, setSelectedPosition] = useState<PositionType | null>(null);
   const [positions, setPositions] = useState<PositionType[]>([]);
+  const [countdowns, setCountdowns] = useState<Record<number, { text: string, isNearDeadline: boolean } | null>>({});
   
   // Load positions from localStorage
   useEffect(() => {
@@ -54,6 +58,69 @@ const ApplyPage = () => {
       setPositions(fallbackVoltPositions);
     }
   }, []);
+
+  // Update countdowns every minute
+  useEffect(() => {
+    // Calculate initial countdowns
+    updateCountdowns();
+    
+    // Set interval to update countdowns
+    const intervalId = setInterval(() => {
+      updateCountdowns();
+    }, 60000); // Update every minute
+    
+    // Clear interval on component unmount
+    return () => clearInterval(intervalId);
+  }, [positions]);
+
+  const updateCountdowns = () => {
+    const newCountdowns: Record<number, { text: string, isNearDeadline: boolean } | null> = {};
+    
+    positions.forEach(position => {
+      if (position.deadline && position.publishedDate) {
+        newCountdowns[position.id] = getCountdown(position.deadline);
+      } else {
+        newCountdowns[position.id] = null;
+      }
+    });
+    
+    setCountdowns(newCountdowns);
+  };
+
+  // Function to calculate and format the remaining time until deadline
+  const getCountdown = (deadline?: string) => {
+    if (!deadline) return null;
+    
+    const deadlineDate = new Date(deadline);
+    const now = new Date();
+    
+    if (deadlineDate <= now) {
+      return { text: "Application period has ended", isNearDeadline: true };
+    }
+    
+    const daysRemaining = differenceInDays(deadlineDate, now);
+    const hoursRemaining = differenceInHours(deadlineDate, now) % 24;
+    const minutesRemaining = differenceInMinutes(deadlineDate, now) % 60;
+    
+    const isNearDeadline = daysRemaining < 2; // Less than 2 days is near deadline
+    
+    if (daysRemaining > 0) {
+      return {
+        text: `${daysRemaining}d ${hoursRemaining}h remaining`,
+        isNearDeadline
+      };
+    } else if (hoursRemaining > 0) {
+      return {
+        text: `${hoursRemaining}h ${minutesRemaining}m remaining`,
+        isNearDeadline
+      };
+    } else {
+      return {
+        text: `${minutesRemaining}m remaining`,
+        isNearDeadline
+      };
+    }
+  };
 
   const handleTypeSelect = (type: 'volt' | 'project') => {
     setSelectedType(type);
@@ -154,7 +221,17 @@ const ApplyPage = () => {
                   voltPositions.map((position) => (
                     <Collapsible key={position.id} className="border border-gray-200 rounded-lg">
                       <div className="flex justify-between items-center p-4 cursor-pointer" onClick={() => handlePositionSelect(position)}>
-                        <h3 className="font-semibold text-lg">{position.title}</h3>
+                        <div>
+                          <h3 className="font-semibold text-lg">{position.title}</h3>
+                          {countdowns[position.id] && (
+                            <div className="flex items-center gap-1 mt-1">
+                              <Clock size={14} className={countdowns[position.id]?.isNearDeadline ? 'text-red-600' : 'text-gray-500'} />
+                              <span className={`text-xs ${countdowns[position.id]?.isNearDeadline ? 'text-red-600 font-medium' : 'text-gray-500'}`}>
+                                {countdowns[position.id]?.text}
+                              </span>
+                            </div>
+                          )}
+                        </div>
                         <CollapsibleTrigger className="hover:bg-gray-100 p-2 rounded-full">
                           <ChevronDown size={20} />
                         </CollapsibleTrigger>
@@ -216,7 +293,17 @@ const ApplyPage = () => {
                       {project.positions.map((position) => (
                         <Collapsible key={position.id} className="border border-gray-200 rounded-lg">
                           <div className="flex justify-between items-center p-4 cursor-pointer" onClick={() => handlePositionSelect(position)}>
-                            <h3 className="font-semibold text-lg">{position.title}</h3>
+                            <div>
+                              <h3 className="font-semibold text-lg">{position.title}</h3>
+                              {countdowns[position.id] && (
+                                <div className="flex items-center gap-1 mt-1">
+                                  <Clock size={14} className={countdowns[position.id]?.isNearDeadline ? 'text-red-600' : 'text-gray-500'} />
+                                  <span className={`text-xs ${countdowns[position.id]?.isNearDeadline ? 'text-red-600 font-medium' : 'text-gray-500'}`}>
+                                    {countdowns[position.id]?.text}
+                                  </span>
+                                </div>
+                              )}
+                            </div>
                             <CollapsibleTrigger className="hover:bg-gray-100 p-2 rounded-full">
                               <ChevronDown size={20} />
                             </CollapsibleTrigger>
@@ -262,7 +349,18 @@ const ApplyPage = () => {
               </button>
               
               <h2 className="heading-md text-volt-dark mb-2">Apply for: {selectedPosition.title}</h2>
-              <p className="text-volt-text/80 mb-8">{selectedPosition.description}</p>
+              <p className="text-volt-text/80 mb-2">{selectedPosition.description}</p>
+              
+              {countdowns[selectedPosition.id] && (
+                <div className={`mb-6 p-3 rounded-md ${countdowns[selectedPosition.id]?.isNearDeadline ? 'bg-red-50' : 'bg-gray-50'}`}>
+                  <div className="flex items-center gap-2">
+                    <Clock size={18} className={countdowns[selectedPosition.id]?.isNearDeadline ? 'text-red-600' : 'text-gray-600'} />
+                    <span className={`font-medium ${countdowns[selectedPosition.id]?.isNearDeadline ? 'text-red-600' : 'text-gray-800'}`}>
+                      Application deadline: {countdowns[selectedPosition.id]?.text}
+                    </span>
+                  </div>
+                </div>
+              )}
               
               <ApplyForm positionTitle={selectedPosition.title} applicationType={selectedType} />
             </div>

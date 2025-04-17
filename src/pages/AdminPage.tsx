@@ -7,10 +7,14 @@ import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
-import { FileText, Search, Download, UserCheck, UserX, Plus, Save, Trash } from 'lucide-react';
+import { FileText, Search, Download, UserCheck, UserX, Plus, Save, Trash, Calendar } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { toast } from '@/components/ui/use-toast';
+import { format, differenceInDays, differenceInHours, differenceInMinutes } from 'date-fns';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar as CalendarComponent } from '@/components/ui/calendar';
+import { cn } from '@/lib/utils';
 
 // Define application type
 interface ApplicationType {
@@ -21,6 +25,8 @@ interface ApplicationType {
   date: string;
   status: 'pending' | 'reviewed' | 'accepted' | 'rejected';
   documents: string[];
+  documentFiles?: File[];
+  documentData?: string[]; // Base64 encoded file data
   details: {
     firstName?: string;
     familyName?: string;
@@ -44,6 +50,8 @@ interface PositionType {
   projectDescription?: string;
   preferredMajors?: string[];
   active: boolean;
+  deadline?: string; // Added deadline field
+  publishedDate?: string; // Added publish date
 }
 
 // Sample application data as fallback
@@ -153,6 +161,7 @@ const AdminPage = () => {
   const [activeTab, setActiveTab] = useState<'applications' | 'positions'>('applications');
   const [positionTab, setPositionTab] = useState<'volt' | 'project'>('volt');
   const [editingPositionId, setEditingPositionId] = useState<number | null>(null);
+  const [deadlineDate, setDeadlineDate] = useState<Date | undefined>(undefined);
 
   // Load applications and positions from localStorage on component mount
   useEffect(() => {
@@ -193,6 +202,41 @@ const AdminPage = () => {
       localStorage.setItem('positions', JSON.stringify(positions));
     }
   }, [positions]);
+
+  // Function to calculate and format the remaining time until deadline
+  const getCountdown = (deadline?: string, publishedDate?: string) => {
+    if (!deadline) return null;
+    
+    const deadlineDate = new Date(deadline);
+    const now = new Date();
+    
+    if (deadlineDate <= now) {
+      return { text: "Expired", isNearDeadline: true };
+    }
+    
+    const daysRemaining = differenceInDays(deadlineDate, now);
+    const hoursRemaining = differenceInHours(deadlineDate, now) % 24;
+    const minutesRemaining = differenceInMinutes(deadlineDate, now) % 60;
+    
+    const isNearDeadline = daysRemaining < 2; // Less than 2 days is near deadline
+    
+    if (daysRemaining > 0) {
+      return {
+        text: `${daysRemaining}d ${hoursRemaining}h remaining`,
+        isNearDeadline
+      };
+    } else if (hoursRemaining > 0) {
+      return {
+        text: `${hoursRemaining}h ${minutesRemaining}m remaining`,
+        isNearDeadline
+      };
+    } else {
+      return {
+        text: `${minutesRemaining}m remaining`,
+        isNearDeadline
+      };
+    }
+  };
 
   const filteredApplications = applications.filter(app => {
     const matchesSearch = app.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -266,10 +310,19 @@ const AdminPage = () => {
       return;
     }
 
+    const positionToSave = {
+      ...newPosition,
+      deadline: deadlineDate ? format(deadlineDate, 'yyyy-MM-dd') : undefined,
+    };
+
     if (editingPositionId !== null) {
       // Update existing position
       const updatedPositions = positions.map(pos => 
-        pos.id === editingPositionId ? { ...newPosition, id: editingPositionId } as PositionType : pos
+        pos.id === editingPositionId ? { 
+          ...positionToSave, 
+          id: editingPositionId,
+          publishedDate: pos.publishedDate || (pos.active ? new Date().toISOString().split('T')[0] : undefined)
+        } as PositionType : pos
       );
       setPositions(updatedPositions);
       toast({
@@ -280,9 +333,10 @@ const AdminPage = () => {
       // Add new position
       const newId = positions.length > 0 ? Math.max(...positions.map(p => p.id)) + 1 : 1;
       const positionToAdd = { 
-        ...newPosition, 
+        ...positionToSave, 
         id: newId,
-        active: true
+        active: true,
+        publishedDate: new Date().toISOString().split('T')[0]
       } as PositionType;
       
       setPositions([...positions, positionToAdd]);
@@ -300,6 +354,7 @@ const AdminPage = () => {
       type: positionTab,
       active: true
     });
+    setDeadlineDate(undefined);
     setEditingPositionId(null);
   };
 
@@ -307,6 +362,7 @@ const AdminPage = () => {
     setNewPosition(position);
     setEditingPositionId(position.id);
     setPositionTab(position.type);
+    setDeadlineDate(position.deadline ? new Date(position.deadline) : undefined);
   };
 
   const handleDeletePosition = (id: number) => {
@@ -321,6 +377,7 @@ const AdminPage = () => {
         type: positionTab,
         active: true
       });
+      setDeadlineDate(undefined);
       setEditingPositionId(null);
     }
 
@@ -331,10 +388,37 @@ const AdminPage = () => {
   };
 
   const handleToggleActive = (id: number) => {
-    const updatedPositions = positions.map(pos => 
-      pos.id === id ? { ...pos, active: !pos.active } : pos
-    );
+    const updatedPositions = positions.map(pos => {
+      if (pos.id === id) {
+        const newActiveState = !pos.active;
+        // Set publishedDate when a position is activated
+        const publishedDate = newActiveState && !pos.publishedDate 
+          ? new Date().toISOString().split('T')[0] 
+          : pos.publishedDate;
+          
+        return { ...pos, active: newActiveState, publishedDate };
+      }
+      return pos;
+    });
     setPositions(updatedPositions);
+  };
+
+  const handleDocumentDownload = (app: ApplicationType, docIndex: number) => {
+    if (app.documentData && app.documentData[docIndex]) {
+      // Create an anchor element and trigger download
+      const link = document.createElement('a');
+      link.href = app.documentData[docIndex];
+      link.download = `${app.documents[docIndex]}_${app.fullName.replace(/\s+/g, '_')}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } else {
+      toast({
+        title: "Document Not Available",
+        description: "The document file is not available for download.",
+        variant: "destructive",
+      });
+    }
   };
 
   const filteredPositions = positions.filter(pos => pos.type === positionTab);
@@ -428,7 +512,10 @@ const AdminPage = () => {
                                       key={idx}
                                       className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center cursor-pointer hover:bg-gray-200"
                                       title={`Download ${doc}`}
-                                      onClick={(e) => e.stopPropagation()}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleDocumentDownload(app, idx);
+                                      }}
                                     >
                                       <FileText size={16} />
                                     </div>
@@ -484,6 +571,39 @@ const AdminPage = () => {
                                 placeholder="Describe the position and responsibilities"
                                 rows={4}
                               />
+                            </div>
+                            
+                            <div>
+                              <Label>Application Deadline</Label>
+                              <div className="flex flex-col space-y-2">
+                                <Popover>
+                                  <PopoverTrigger asChild>
+                                    <Button
+                                      variant="outline"
+                                      className={cn(
+                                        "w-full justify-start text-left font-normal",
+                                        !deadlineDate && "text-muted-foreground"
+                                      )}
+                                    >
+                                      <Calendar className="mr-2 h-4 w-4" onClick={setDeadlineDate} />
+                                      {deadlineDate ? format(deadlineDate, "PPP") : <span>Pick a deadline date</span>}
+                                    </Button>
+                                  </PopoverTrigger>
+                                  <PopoverContent className="w-auto p-0" align="start">
+                                    <CalendarComponent
+                                      mode="single"
+                                      selected={deadlineDate}
+                                      onSelect={setDeadlineDate}
+                                      initialFocus
+                                      disabled={(date) => date < new Date()}
+                                      className={cn("p-3 pointer-events-auto")}
+                                    />
+                                  </PopoverContent>
+                                </Popover>
+                                <p className="text-xs text-gray-500">
+                                  The position will automatically show a countdown timer from publish date until this deadline
+                                </p>
+                              </div>
                             </div>
                             
                             <div>
@@ -576,6 +696,39 @@ const AdminPage = () => {
                             </div>
                             
                             <div>
+                              <Label>Application Deadline</Label>
+                              <div className="flex flex-col space-y-2">
+                                <Popover>
+                                  <PopoverTrigger asChild>
+                                    <Button
+                                      variant="outline"
+                                      className={cn(
+                                        "w-full justify-start text-left font-normal",
+                                        !deadlineDate && "text-muted-foreground"
+                                      )}
+                                    >
+                                      <Calendar className="mr-2 h-4 w-4" onClick={setDeadlineDate} />
+                                      {deadlineDate ? format(deadlineDate, "PPP") : <span>Pick a deadline date</span>}
+                                    </Button>
+                                  </PopoverTrigger>
+                                  <PopoverContent className="w-auto p-0" align="start">
+                                    <CalendarComponent
+                                      mode="single"
+                                      selected={deadlineDate}
+                                      onSelect={setDeadlineDate}
+                                      initialFocus
+                                      disabled={(date) => date < new Date()}
+                                      className={cn("p-3 pointer-events-auto")}
+                                    />
+                                  </PopoverContent>
+                                </Popover>
+                                <p className="text-xs text-gray-500">
+                                  The position will automatically show a countdown timer from publish date until this deadline
+                                </p>
+                              </div>
+                            </div>
+                            
+                            <div>
                               <Label>Preferred Majors</Label>
                               <div className="flex gap-2 mb-2">
                                 <Input
@@ -657,6 +810,21 @@ const AdminPage = () => {
                               </div>
                               
                               <p className="text-gray-600 text-sm mb-2 line-clamp-2">{position.description}</p>
+                              
+                              {position.deadline && (
+                                <div className="text-sm mb-2">
+                                  <span className="font-medium">Deadline:</span>{' '}
+                                  <span>{format(new Date(position.deadline), 'PPP')}</span>
+                                  {position.publishedDate && position.active && (
+                                    <div>
+                                      <span className="font-medium">Time remaining:</span>{' '}
+                                      <span className={getCountdown(position.deadline, position.publishedDate)?.isNearDeadline ? 'text-red-600 font-medium' : ''}>
+                                        {getCountdown(position.deadline, position.publishedDate)?.text || 'Not published'}
+                                      </span>
+                                    </div>
+                                  )}
+                                </div>
+                              )}
                               
                               {positionTab === 'project' && position.companyName && (
                                 <div className="text-sm text-gray-500">
@@ -767,7 +935,10 @@ const AdminPage = () => {
                             <FileText className="text-gray-500" />
                             <span>{doc}</span>
                           </div>
-                          <button className="text-blue-600 hover:text-blue-800 flex items-center gap-1">
+                          <button 
+                            className="text-blue-600 hover:text-blue-800 flex items-center gap-1"
+                            onClick={() => handleDocumentDownload(selectedApplication, idx)}
+                          >
                             <Download size={16} />
                             Download
                           </button>
