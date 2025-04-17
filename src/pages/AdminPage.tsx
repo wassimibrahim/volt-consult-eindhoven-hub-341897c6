@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
@@ -16,7 +15,6 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 
-// Define application type
 interface ApplicationType {
   id: number;
   fullName: string;
@@ -39,7 +37,6 @@ interface ApplicationType {
   };
 }
 
-// Define position type
 interface PositionType {
   id: number;
   title: string;
@@ -54,7 +51,6 @@ interface PositionType {
   publishedDate?: string; // Added publish date
 }
 
-// Sample application data as fallback
 const sampleApplications: ApplicationType[] = [
   {
     id: 1,
@@ -147,7 +143,6 @@ const AdminPage = () => {
   const [filterType, setFilterType] = useState<'all' | 'volt' | 'project'>('all');
   const [filterStatus, setFilterStatus] = useState<'all' | 'pending' | 'reviewed' | 'accepted' | 'rejected'>('all');
   
-  // State for positions management
   const [positions, setPositions] = useState<PositionType[]>([]);
   const [newPosition, setNewPosition] = useState<Partial<PositionType>>({
     title: '',
@@ -163,25 +158,20 @@ const AdminPage = () => {
   const [editingPositionId, setEditingPositionId] = useState<number | null>(null);
   const [deadlineDate, setDeadlineDate] = useState<Date | undefined>(undefined);
 
-  // Load applications and positions from localStorage on component mount
   useEffect(() => {
     const loadData = () => {
       try {
-        // Get applications from localStorage
         const storedApplications = localStorage.getItem('applications');
         const parsedApplications = storedApplications ? JSON.parse(storedApplications) : [];
         
-        // If there are stored applications, use them, otherwise use sample applications
         if (parsedApplications && parsedApplications.length > 0) {
           setApplications(parsedApplications);
           console.log('Loaded applications from localStorage:', parsedApplications);
         } else {
-          // If no stored applications, use the sample applications
           setApplications(sampleApplications);
           console.log('No stored applications found, using samples');
         }
 
-        // Get positions from localStorage
         const storedPositions = localStorage.getItem('positions');
         if (storedPositions) {
           setPositions(JSON.parse(storedPositions));
@@ -196,14 +186,12 @@ const AdminPage = () => {
     loadData();
   }, []);
 
-  // Function to save positions to localStorage whenever they change
   useEffect(() => {
     if (positions.length > 0) {
       localStorage.setItem('positions', JSON.stringify(positions));
     }
   }, [positions]);
 
-  // Function to calculate and format the remaining time until deadline
   const getCountdown = (deadline?: string, publishedDate?: string) => {
     if (!deadline) return null;
     
@@ -218,7 +206,7 @@ const AdminPage = () => {
     const hoursRemaining = differenceInHours(deadlineDate, now) % 24;
     const minutesRemaining = differenceInMinutes(deadlineDate, now) % 60;
     
-    const isNearDeadline = daysRemaining < 2; // Less than 2 days is near deadline
+    const isNearDeadline = daysRemaining < 2;
     
     if (daysRemaining > 0) {
       return {
@@ -253,7 +241,6 @@ const AdminPage = () => {
     );
     setApplications(updatedApplications);
     
-    // Also update in localStorage
     localStorage.setItem('applications', JSON.stringify(updatedApplications));
     
     if (selectedApplication && selectedApplication.id === id) {
@@ -300,7 +287,6 @@ const AdminPage = () => {
   };
 
   const handleSavePosition = () => {
-    // Validate required fields
     if (!newPosition.title || !newPosition.description) {
       toast({
         title: "Missing Information",
@@ -316,7 +302,6 @@ const AdminPage = () => {
     };
 
     if (editingPositionId !== null) {
-      // Update existing position
       const updatedPositions = positions.map(pos => 
         pos.id === editingPositionId ? { 
           ...positionToSave, 
@@ -330,7 +315,6 @@ const AdminPage = () => {
         description: `${newPosition.title} has been updated successfully.`,
       });
     } else {
-      // Add new position
       const newId = positions.length > 0 ? Math.max(...positions.map(p => p.id)) + 1 : 1;
       const positionToAdd = { 
         ...positionToSave, 
@@ -346,7 +330,6 @@ const AdminPage = () => {
       });
     }
 
-    // Reset form
     setNewPosition({
       title: '',
       description: '',
@@ -391,7 +374,6 @@ const AdminPage = () => {
     const updatedPositions = positions.map(pos => {
       if (pos.id === id) {
         const newActiveState = !pos.active;
-        // Set publishedDate when a position is activated
         const publishedDate = newActiveState && !pos.publishedDate 
           ? new Date().toISOString().split('T')[0] 
           : pos.publishedDate;
@@ -405,7 +387,6 @@ const AdminPage = () => {
 
   const handleDocumentDownload = (app: ApplicationType, docIndex: number) => {
     if (app.documentData && app.documentData[docIndex]) {
-      // Create an anchor element and trigger download
       const link = document.createElement('a');
       link.href = app.documentData[docIndex];
       link.download = `${app.documents[docIndex]}_${app.fullName.replace(/\s+/g, '_')}.pdf`;
@@ -538,7 +519,6 @@ const AdminPage = () => {
                 
                 <TabsContent value="positions">
                   <div className="grid md:grid-cols-2 gap-6">
-                    {/* Position Form Section */}
                     <div className="bg-white p-6 rounded-lg border border-gray-200">
                       <Tabs defaultValue="volt" onValueChange={(value) => setPositionTab(value as 'volt' | 'project')}>
                         <TabsList className="mb-4">
@@ -585,7 +565,7 @@ const AdminPage = () => {
                                         !deadlineDate && "text-muted-foreground"
                                       )}
                                     >
-                                      <Calendar className="mr-2 h-4 w-4" onClick={setDeadlineDate} />
+                                      <Calendar className="mr-2 h-4 w-4" />
                                       {deadlineDate ? format(deadlineDate, "PPP") : <span>Pick a deadline date</span>}
                                     </Button>
                                   </PopoverTrigger>
@@ -707,7 +687,7 @@ const AdminPage = () => {
                                         !deadlineDate && "text-muted-foreground"
                                       )}
                                     >
-                                      <Calendar className="mr-2 h-4 w-4" onClick={setDeadlineDate} />
+                                      <Calendar className="mr-2 h-4 w-4" />
                                       {deadlineDate ? format(deadlineDate, "PPP") : <span>Pick a deadline date</span>}
                                     </Button>
                                   </PopoverTrigger>
@@ -771,7 +751,6 @@ const AdminPage = () => {
                       </Tabs>
                     </div>
                     
-                    {/* Positions List Section */}
                     <div>
                       <h3 className="font-semibold text-lg mb-4">
                         {positionTab === 'volt' ? 'Volt Positions' : 'Project Positions'}
