@@ -1,63 +1,80 @@
 
-# MongoDB Integration for Volt Consulting Group
+# MongoDB Integration Guide
 
-This directory contains services that provide MongoDB integration for Volt Consulting Group's web application. The implementation includes a hybrid approach that works with both MongoDB (when properly configured with a backend API) and falls back to localStorage for development and demo purposes.
+## Backend Setup Required
 
-## Current Implementation
+To implement the MongoDB integration, you need to set up a Node.js/Express backend with the following:
 
-The current implementation uses a hybrid approach:
-
-1. First attempts to connect to the MongoDB database through REST API endpoints
-2. Falls back to localStorage if API calls fail (for development/demo purposes)
-
-## Backend Setup (Required for Production)
-
-To fully utilize MongoDB integration, you need to set up a backend server that connects to your MongoDB database. Here's a high-level overview:
-
-1. Create a Node.js backend with Express
-2. Connect to MongoDB using the provided connection string
-3. Set up API endpoints that match the ones expected by the frontend services
-4. Implement proper authentication and security
-
-### MongoDB Connection String
-
+### MongoDB Connection
+Use this connection string in your backend (never in frontend):
 ```
 mongodb+srv://volt:volt123@cluster0.5nf8mda.mongodb.net/volt?retryWrites=true&w=majority&appName=Cluster0
 ```
 
-## API Endpoints Required
+### Required API Endpoints
 
-Your backend API should implement the following endpoints:
+Your backend needs to implement these endpoints:
 
-### Applications
+#### Applications
 - `GET /api/applications` - Get all applications
-- `POST /api/applications` - Create a new application
-- `PATCH /api/applications/:id` - Update application status
+- `POST /api/applications` - Create new application
 
-### Positions
-- `GET /api/positions` - Get all positions
-- `POST /api/positions` - Create a new position
-- `PATCH /api/positions/:id` - Update a position
-- `DELETE /api/positions/:id` - Delete a position
+#### Messages
+- `GET /api/messages` - Get all messages
+- `POST /api/messages` - Create new message
 
-### Contact Messages
-- `GET /api/contact` - Get all contact messages
-- `POST /api/contact` - Create a new contact message
+#### Users
+- `GET /api/users` - Get all users
+- `POST /api/users` - Create new user
+- `POST /api/auth` - Authenticate user
 
-### Admin Authentication
-- `POST /api/admin/verify` - Verify admin password
+### Mongoose Models
 
-## Security Considerations
+Here are the Mongoose schemas you'll need:
 
-1. **IMPORTANT**: The MongoDB connection string should never be exposed in the frontend code
-2. Always implement proper authentication and authorization on your API endpoints
+```javascript
+// Application Schema
+const applicationSchema = new mongoose.Schema({
+  fullName: String,
+  email: String,
+  position: String,
+  status: {
+    type: String,
+    enum: ['pending', 'reviewed', 'accepted', 'rejected'],
+    default: 'pending'
+  },
+  cv: String,
+  motivationLetter: String,
+  createdAt: { type: Date, default: Date.now }
+});
+
+// Message Schema
+const messageSchema = new mongoose.Schema({
+  name: String,
+  email: String,
+  message: String,
+  createdAt: { type: Date, default: Date.now }
+});
+
+// User Schema
+const userSchema = new mongoose.Schema({
+  email: String,
+  name: String,
+  role: {
+    type: String,
+    enum: ['admin', 'user'],
+    default: 'user'
+  },
+  createdAt: { type: Date, default: Date.now }
+});
+```
+
+### Security Considerations
+
+1. Never expose MongoDB connection string in frontend code
+2. Implement proper authentication and authorization
 3. Use environment variables for sensitive information
-4. Consider implementing rate limiting to prevent abuse
+4. Implement input validation
+5. Set up CORS properly
+6. Implement rate limiting
 
-## Next Steps
-
-1. **Create a Backend API**: Implement a Node.js/Express backend with MongoDB integration
-2. **Update API URL**: Once deployed, update the `API_URL` constant in `mongoDBService.ts`
-3. **Test Thoroughly**: Ensure both APIs and fallback mechanisms work correctly
-
-For any questions or issues, please contact the development team.
