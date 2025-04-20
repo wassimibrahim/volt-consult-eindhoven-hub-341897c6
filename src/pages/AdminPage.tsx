@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
@@ -14,42 +15,18 @@ import { format, differenceInDays, differenceInHours, differenceInMinutes } from
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
-
-interface ApplicationType {
-  id: number;
-  fullName: string;
-  position: string;
-  type: 'volt' | 'project' | null;
-  date: string;
-  status: 'pending' | 'reviewed' | 'accepted' | 'rejected';
-  documents: string[];
-  documentFiles?: File[];
-  documentData?: string[]; // Base64 encoded file data
-  details: {
-    firstName?: string;
-    familyName?: string;
-    birthDate: string;
-    degreeProgram: string;
-    yearOfStudy: string;
-    email?: string;
-    phoneNumber?: string;
-    linkedinProfile: string;
-  };
-}
-
-interface PositionType {
-  id: number;
-  title: string;
-  description: string;
-  requirements: string[];
-  type: 'volt' | 'project';
-  companyName?: string;
-  projectDescription?: string;
-  preferredMajors?: string[];
-  active: boolean;
-  deadline?: string; // Added deadline field
-  publishedDate?: string; // Added publish date
-}
+import { 
+  getApplications, 
+  updateApplicationStatus, 
+  getPositions,
+  savePosition,
+  updatePosition,
+  deletePosition,
+  getContactMessages,
+  ApplicationType,
+  PositionType,
+  ContactMessage
+} from '../services/mongoDBService';
 
 const sampleApplications: ApplicationType[] = [
   {
@@ -81,51 +58,6 @@ const sampleApplications: ApplicationType[] = [
       yearOfStudy: '3rd Year',
       linkedinProfile: 'https://linkedin.com/in/emmajohnson',
     }
-  },
-  {
-    id: 3,
-    fullName: 'Michael Brown',
-    position: 'Data Scientist',
-    type: 'project',
-    date: '2025-04-08',
-    status: 'pending',
-    documents: ['CV', 'Motivation Letter'],
-    details: {
-      birthDate: '1998-03-12',
-      degreeProgram: 'Master - Data Science Engineering',
-      yearOfStudy: '1st Year',
-      linkedinProfile: 'https://linkedin.com/in/michaelbrown',
-    }
-  },
-  {
-    id: 4,
-    fullName: 'Sophia Garcia',
-    position: 'Machine Learning Engineer',
-    type: 'project',
-    date: '2025-04-07',
-    status: 'rejected',
-    documents: ['CV', 'Motivation Letter'],
-    details: {
-      birthDate: '1997-11-30',
-      degreeProgram: 'PhD - Computer Science',
-      yearOfStudy: '2nd Year',
-      linkedinProfile: 'https://linkedin.com/in/sophiagarcia',
-    }
-  },
-  {
-    id: 5,
-    fullName: 'William Lee',
-    position: 'Software Developer',
-    type: 'volt',
-    date: '2025-04-06',
-    status: 'accepted',
-    documents: ['CV', 'Motivation Letter'],
-    details: {
-      birthDate: '1999-02-18',
-      degreeProgram: 'Bachelor - Computer Science',
-      yearOfStudy: '4th Year',
-      linkedinProfile: 'https://linkedin.com/in/williamlee',
-    }
   }
 ];
 
@@ -153,44 +85,51 @@ const AdminPage = () => {
   });
   const [reqInput, setReqInput] = useState('');
   const [majorInput, setMajorInput] = useState('');
-  const [activeTab, setActiveTab] = useState<'applications' | 'positions'>('applications');
+  const [activeTab, setActiveTab] = useState<'applications' | 'positions' | 'messages'>('applications');
   const [positionTab, setPositionTab] = useState<'volt' | 'project'>('volt');
   const [editingPositionId, setEditingPositionId] = useState<number | null>(null);
   const [deadlineDate, setDeadlineDate] = useState<Date | undefined>(undefined);
+  const [loading, setLoading] = useState(true);
+  const [contactMessages, setContactMessages] = useState<ContactMessage[]>([]);
 
   useEffect(() => {
-    const loadData = () => {
+    const loadData = async () => {
+      setLoading(true);
       try {
-        const storedApplications = localStorage.getItem('applications');
-        const parsedApplications = storedApplications ? JSON.parse(storedApplications) : [];
+        // Load applications
+        const fetchedApplications = await getApplications();
         
-        if (parsedApplications && parsedApplications.length > 0) {
-          setApplications(parsedApplications);
-          console.log('Loaded applications from localStorage:', parsedApplications);
+        if (fetchedApplications && fetchedApplications.length > 0) {
+          setApplications(fetchedApplications);
+          console.log('Loaded applications from API/localStorage:', fetchedApplications);
         } else {
           setApplications(sampleApplications);
           console.log('No stored applications found, using samples');
         }
 
-        const storedPositions = localStorage.getItem('positions');
-        if (storedPositions) {
-          setPositions(JSON.parse(storedPositions));
-          console.log('Loaded positions from localStorage:', JSON.parse(storedPositions));
+        // Load positions
+        const fetchedPositions = await getPositions();
+        if (fetchedPositions && fetchedPositions.length > 0) {
+          setPositions(fetchedPositions);
+          console.log('Loaded positions from API/localStorage:', fetchedPositions);
+        }
+        
+        // Load contact messages
+        const fetchedMessages = await getContactMessages();
+        if (fetchedMessages && fetchedMessages.length > 0) {
+          setContactMessages(fetchedMessages);
+          console.log('Loaded contact messages from API/localStorage:', fetchedMessages);
         }
       } catch (error) {
         console.error('Error loading data:', error);
         setApplications(sampleApplications);
+      } finally {
+        setLoading(false);
       }
     };
 
     loadData();
   }, []);
-
-  useEffect(() => {
-    if (positions.length > 0) {
-      localStorage.setItem('positions', JSON.stringify(positions));
-    }
-  }, [positions]);
 
   const getCountdown = (deadline?: string, publishedDate?: string) => {
     if (!deadline) return null;
@@ -235,16 +174,26 @@ const AdminPage = () => {
     return matchesSearch && matchesType && matchesStatus;
   });
 
-  const handleStatusChange = (id: number, status: 'pending' | 'reviewed' | 'accepted' | 'rejected') => {
-    const updatedApplications = applications.map(app => 
-      app.id === id ? { ...app, status } : app
-    );
-    setApplications(updatedApplications);
-    
-    localStorage.setItem('applications', JSON.stringify(updatedApplications));
-    
-    if (selectedApplication && selectedApplication.id === id) {
-      setSelectedApplication({ ...selectedApplication, status });
+  const handleStatusChange = async (id: number, status: 'pending' | 'reviewed' | 'accepted' | 'rejected') => {
+    try {
+      const updatedApplications = await updateApplicationStatus(id, status);
+      setApplications(updatedApplications);
+      
+      if (selectedApplication && selectedApplication.id === id) {
+        setSelectedApplication({ ...selectedApplication, status });
+      }
+      
+      toast({
+        title: "Status Updated",
+        description: `Application status has been updated to ${status}.`,
+      });
+    } catch (error) {
+      console.error('Error updating status:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update application status.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -286,7 +235,7 @@ const AdminPage = () => {
     });
   };
 
-  const handleSavePosition = () => {
+  const handleSavePosition = async () => {
     if (!newPosition.title || !newPosition.description) {
       toast({
         title: "Missing Information",
@@ -301,58 +250,43 @@ const AdminPage = () => {
       deadline: deadlineDate ? format(deadlineDate, 'yyyy-MM-dd') : undefined,
     };
 
-    if (editingPositionId !== null) {
-      const updatedPositions = positions.map(pos => 
-        pos.id === editingPositionId ? { 
-          ...positionToSave, 
-          id: editingPositionId,
-          publishedDate: pos.publishedDate || (pos.active ? new Date().toISOString().split('T')[0] : undefined)
-        } as PositionType : pos
-      );
-      setPositions(updatedPositions);
-      toast({
-        title: "Position Updated",
-        description: `${newPosition.title} has been updated successfully.`,
-      });
-    } else {
-      const newId = positions.length > 0 ? Math.max(...positions.map(p => p.id)) + 1 : 1;
-      const positionToAdd = { 
-        ...positionToSave, 
-        id: newId,
-        active: true,
-        publishedDate: new Date().toISOString().split('T')[0]
-      } as PositionType;
-      
-      setPositions([...positions, positionToAdd]);
-      toast({
-        title: "Position Added",
-        description: `${newPosition.title} has been added successfully.`,
-      });
-    }
+    try {
+      if (editingPositionId !== null) {
+        // Update existing position
+        await updatePosition(editingPositionId, {
+          ...positionToSave,
+          publishedDate: positions.find(p => p.id === editingPositionId)?.publishedDate || 
+                        (newPosition.active ? new Date().toISOString().split('T')[0] : undefined)
+        });
+        
+        // Refresh positions
+        const updatedPositions = await getPositions();
+        setPositions(updatedPositions);
+        
+        toast({
+          title: "Position Updated",
+          description: `${newPosition.title} has been updated successfully.`,
+        });
+      } else {
+        // Create new position
+        const publishDate = new Date().toISOString().split('T')[0];
+        await savePosition({
+          ...positionToSave as Omit<PositionType, 'id'>,
+          active: true,
+          publishedDate: publishDate
+        });
+        
+        // Refresh positions
+        const updatedPositions = await getPositions();
+        setPositions(updatedPositions);
+        
+        toast({
+          title: "Position Added",
+          description: `${newPosition.title} has been added successfully.`,
+        });
+      }
 
-    setNewPosition({
-      title: '',
-      description: '',
-      requirements: [],
-      type: positionTab,
-      active: true
-    });
-    setDeadlineDate(undefined);
-    setEditingPositionId(null);
-  };
-
-  const handleEditPosition = (position: PositionType) => {
-    setNewPosition(position);
-    setEditingPositionId(position.id);
-    setPositionTab(position.type);
-    setDeadlineDate(position.deadline ? new Date(position.deadline) : undefined);
-  };
-
-  const handleDeletePosition = (id: number) => {
-    const updatedPositions = positions.filter(pos => pos.id !== id);
-    setPositions(updatedPositions);
-    
-    if (editingPositionId === id) {
+      // Reset form
       setNewPosition({
         title: '',
         description: '',
@@ -362,27 +296,83 @@ const AdminPage = () => {
       });
       setDeadlineDate(undefined);
       setEditingPositionId(null);
+    } catch (error) {
+      console.error('Error saving position:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save position. Please try again.",
+        variant: "destructive",
+      });
     }
-
-    toast({
-      title: "Position Deleted",
-      description: "The position has been removed.",
-    });
   };
 
-  const handleToggleActive = (id: number) => {
-    const updatedPositions = positions.map(pos => {
-      if (pos.id === id) {
-        const newActiveState = !pos.active;
-        const publishedDate = newActiveState && !pos.publishedDate 
-          ? new Date().toISOString().split('T')[0] 
-          : pos.publishedDate;
-          
-        return { ...pos, active: newActiveState, publishedDate };
+  const handleEditPosition = (position: PositionType) => {
+    setNewPosition(position);
+    setEditingPositionId(position.id);
+    setPositionTab(position.type);
+    setDeadlineDate(position.deadline ? new Date(position.deadline) : undefined);
+  };
+
+  const handleDeletePosition = async (id: number) => {
+    try {
+      await deletePosition(id);
+      
+      // Refresh positions
+      const updatedPositions = await getPositions();
+      setPositions(updatedPositions);
+      
+      if (editingPositionId === id) {
+        setNewPosition({
+          title: '',
+          description: '',
+          requirements: [],
+          type: positionTab,
+          active: true
+        });
+        setDeadlineDate(undefined);
+        setEditingPositionId(null);
       }
-      return pos;
-    });
-    setPositions(updatedPositions);
+
+      toast({
+        title: "Position Deleted",
+        description: "The position has been removed.",
+      });
+    } catch (error) {
+      console.error('Error deleting position:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete position. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleToggleActive = async (id: number) => {
+    try {
+      const position = positions.find(p => p.id === id);
+      if (!position) return;
+      
+      const newActiveState = !position.active;
+      const publishedDate = newActiveState && !position.publishedDate 
+        ? new Date().toISOString().split('T')[0] 
+        : position.publishedDate;
+      
+      await updatePosition(id, { 
+        active: newActiveState, 
+        publishedDate 
+      });
+      
+      // Refresh positions
+      const updatedPositions = await getPositions();
+      setPositions(updatedPositions);
+    } catch (error) {
+      console.error('Error toggling position status:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update position status. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleDocumentDownload = (app: ApplicationType, docIndex: number) => {
@@ -410,429 +400,467 @@ const AdminPage = () => {
       <div className="pt-24 pb-16">
         <div className="container-custom">
           <AdminAuth>
-            <div className="bg-white rounded-xl shadow-md p-6 mb-6">
-              <h1 className="heading-lg text-volt-dark mb-6">Admin Dashboard</h1>
-              
-              <Tabs defaultValue="applications" className="w-full" onValueChange={(value) => setActiveTab(value as 'applications' | 'positions')}>
-                <TabsList className="mb-6">
-                  <TabsTrigger value="applications">Applications</TabsTrigger>
-                  <TabsTrigger value="positions">Manage Positions</TabsTrigger>
-                </TabsList>
+            {loading ? (
+              <div className="flex justify-center items-center py-12">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#F00000]"></div>
+              </div>
+            ) : (
+              <div className="bg-white rounded-xl shadow-md p-6 mb-6">
+                <h1 className="heading-lg text-volt-dark mb-6">Admin Dashboard</h1>
                 
-                <TabsContent value="applications">
-                  <div className="flex flex-col md:flex-row gap-4 mb-6">
-                    <div className="flex-1">
-                      <div className="relative">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-                        <Input
-                          placeholder="Search applications..."
-                          className="pl-10"
-                          value={searchTerm}
-                          onChange={(e) => setSearchTerm(e.target.value)}
-                        />
+                <Tabs defaultValue="applications" className="w-full" onValueChange={(value) => setActiveTab(value as 'applications' | 'positions' | 'messages')}>
+                  <TabsList className="mb-6">
+                    <TabsTrigger value="applications">Applications</TabsTrigger>
+                    <TabsTrigger value="positions">Manage Positions</TabsTrigger>
+                    <TabsTrigger value="messages">Contact Messages</TabsTrigger>
+                  </TabsList>
+                  
+                  <TabsContent value="applications">
+                    <div className="flex flex-col md:flex-row gap-4 mb-6">
+                      <div className="flex-1">
+                        <div className="relative">
+                          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                          <Input
+                            placeholder="Search applications..."
+                            className="pl-10"
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                          />
+                        </div>
+                      </div>
+                      <div className="flex gap-4">
+                        <select
+                          className="px-3 py-2 rounded-md border border-gray-300"
+                          value={filterType}
+                          onChange={(e) => setFilterType(e.target.value as any)}
+                        >
+                          <option value="all">All Types</option>
+                          <option value="volt">Volt Applications</option>
+                          <option value="project">Project Applications</option>
+                        </select>
+                        
+                        <select
+                          className="px-3 py-2 rounded-md border border-gray-300"
+                          value={filterStatus}
+                          onChange={(e) => setFilterStatus(e.target.value as any)}
+                        >
+                          <option value="all">All Status</option>
+                          <option value="pending">Pending</option>
+                          <option value="reviewed">Reviewed</option>
+                          <option value="accepted">Accepted</option>
+                          <option value="rejected">Rejected</option>
+                        </select>
                       </div>
                     </div>
-                    <div className="flex gap-4">
-                      <select
-                        className="px-3 py-2 rounded-md border border-gray-300"
-                        value={filterType}
-                        onChange={(e) => setFilterType(e.target.value as any)}
-                      >
-                        <option value="all">All Types</option>
-                        <option value="volt">Volt Applications</option>
-                        <option value="project">Project Applications</option>
-                      </select>
-                      
-                      <select
-                        className="px-3 py-2 rounded-md border border-gray-300"
-                        value={filterStatus}
-                        onChange={(e) => setFilterStatus(e.target.value as any)}
-                      >
-                        <option value="all">All Status</option>
-                        <option value="pending">Pending</option>
-                        <option value="reviewed">Reviewed</option>
-                        <option value="accepted">Accepted</option>
-                        <option value="rejected">Rejected</option>
-                      </select>
-                    </div>
-                  </div>
-                  
-                  <div className="overflow-x-auto">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Name</TableHead>
-                          <TableHead>Position</TableHead>
-                          <TableHead>Type</TableHead>
-                          <TableHead>Date</TableHead>
-                          <TableHead>Status</TableHead>
-                          <TableHead>Documents</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {filteredApplications.length > 0 ? (
-                          filteredApplications.map((app) => (
-                            <TableRow 
-                              key={app.id} 
-                              className="cursor-pointer hover:bg-gray-50"
-                              onClick={() => setSelectedApplication(app)}
-                            >
-                              <TableCell className="font-medium">{app.fullName}</TableCell>
-                              <TableCell>{app.position}</TableCell>
-                              <TableCell className="capitalize">{app.type}</TableCell>
-                              <TableCell>{new Date(app.date).toLocaleDateString()}</TableCell>
-                              <TableCell>
-                                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusColors[app.status]}`}>
-                                  {app.status.charAt(0).toUpperCase() + app.status.slice(1)}
-                                </span>
+                    
+                    <div className="overflow-x-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Name</TableHead>
+                            <TableHead>Position</TableHead>
+                            <TableHead>Type</TableHead>
+                            <TableHead>Date</TableHead>
+                            <TableHead>Status</TableHead>
+                            <TableHead>Documents</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {filteredApplications.length > 0 ? (
+                            filteredApplications.map((app) => (
+                              <TableRow 
+                                key={app.id} 
+                                className="cursor-pointer hover:bg-gray-50"
+                                onClick={() => setSelectedApplication(app)}
+                              >
+                                <TableCell className="font-medium">{app.fullName}</TableCell>
+                                <TableCell>{app.position}</TableCell>
+                                <TableCell className="capitalize">{app.type}</TableCell>
+                                <TableCell>{new Date(app.date).toLocaleDateString()}</TableCell>
+                                <TableCell>
+                                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusColors[app.status]}`}>
+                                    {app.status.charAt(0).toUpperCase() + app.status.slice(1)}
+                                  </span>
+                                </TableCell>
+                                <TableCell>
+                                  <div className="flex space-x-2">
+                                    {app.documents.map((doc, idx) => (
+                                      <div 
+                                        key={idx}
+                                        className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center cursor-pointer hover:bg-gray-200"
+                                        title={`Download ${doc}`}
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleDocumentDownload(app, idx);
+                                        }}
+                                      >
+                                        <FileText size={16} />
+                                      </div>
+                                    ))}
+                                  </div>
+                                </TableCell>
+                              </TableRow>
+                            ))
+                          ) : (
+                            <TableRow>
+                              <TableCell colSpan={6} className="text-center py-8 text-gray-500">
+                                No applications found with the current filters
                               </TableCell>
-                              <TableCell>
-                                <div className="flex space-x-2">
-                                  {app.documents.map((doc, idx) => (
-                                    <div 
-                                      key={idx}
-                                      className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center cursor-pointer hover:bg-gray-200"
-                                      title={`Download ${doc}`}
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        handleDocumentDownload(app, idx);
-                                      }}
-                                    >
-                                      <FileText size={16} />
+                            </TableRow>
+                          )}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  </TabsContent>
+                  
+                  <TabsContent value="positions">
+                    <div className="grid md:grid-cols-2 gap-6">
+                      <div className="bg-white p-6 rounded-lg border border-gray-200">
+                        <Tabs defaultValue="volt" onValueChange={(value) => setPositionTab(value as 'volt' | 'project')}>
+                          <TabsList className="mb-4">
+                            <TabsTrigger value="volt">Volt Positions</TabsTrigger>
+                            <TabsTrigger value="project">Project Positions</TabsTrigger>
+                          </TabsList>
+                          
+                          <TabsContent value="volt">
+                            <div className="space-y-4">
+                              <h3 className="font-semibold text-lg">
+                                {editingPositionId !== null ? 'Edit Volt Position' : 'Add New Volt Position'}
+                              </h3>
+                              
+                              <div>
+                                <Label htmlFor="title">Position Title*</Label>
+                                <Input
+                                  id="title"
+                                  value={newPosition.title || ''}
+                                  onChange={(e) => setNewPosition({...newPosition, title: e.target.value})}
+                                  placeholder="e.g., Technology Consultant"
+                                />
+                              </div>
+                              
+                              <div>
+                                <Label htmlFor="description">Position Description*</Label>
+                                <Textarea
+                                  id="description"
+                                  value={newPosition.description || ''}
+                                  onChange={(e) => setNewPosition({...newPosition, description: e.target.value})}
+                                  placeholder="Describe the position and responsibilities"
+                                  rows={4}
+                                />
+                              </div>
+                              
+                              <div>
+                                <Label>Application Deadline</Label>
+                                <div className="flex flex-col space-y-2">
+                                  <Popover>
+                                    <PopoverTrigger asChild>
+                                      <Button
+                                        variant="outline"
+                                        className={cn(
+                                          "w-full justify-start text-left font-normal",
+                                          !deadlineDate && "text-muted-foreground"
+                                        )}
+                                      >
+                                        <Calendar className="mr-2 h-4 w-4" />
+                                        {deadlineDate ? format(deadlineDate, "PPP") : <span>Pick a deadline date</span>}
+                                      </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-auto p-0" align="start">
+                                      <CalendarComponent
+                                        mode="single"
+                                        selected={deadlineDate}
+                                        onSelect={setDeadlineDate}
+                                        initialFocus
+                                        disabled={(date) => date < new Date()}
+                                      />
+                                    </PopoverContent>
+                                  </Popover>
+                                  <p className="text-xs text-gray-500">
+                                    The position will automatically show a countdown timer from publish date until this deadline
+                                  </p>
+                                </div>
+                              </div>
+                              
+                              <div>
+                                <Label>Requirements</Label>
+                                <div className="flex gap-2 mb-2">
+                                  <Input
+                                    value={reqInput}
+                                    onChange={(e) => setReqInput(e.target.value)}
+                                    placeholder="e.g., Strong analytical skills"
+                                    className="flex-1"
+                                  />
+                                  <Button 
+                                    type="button"
+                                    size="sm"
+                                    onClick={handleAddRequirement}
+                                  >
+                                    <Plus size={16} />
+                                  </Button>
+                                </div>
+                                
+                                <div className="mt-2 space-y-2">
+                                  {newPosition.requirements?.map((req, idx) => (
+                                    <div key={idx} className="flex items-center justify-between bg-gray-50 p-2 rounded">
+                                      <span>{req}</span>
+                                      <button 
+                                        onClick={() => handleRemoveRequirement(idx)}
+                                        className="text-red-500 hover:text-red-700"
+                                        type="button"
+                                      >
+                                        <Trash size={16} />
+                                      </button>
                                     </div>
                                   ))}
                                 </div>
-                              </TableCell>
-                            </TableRow>
-                          ))
-                        ) : (
-                          <TableRow>
-                            <TableCell colSpan={6} className="text-center py-8 text-gray-500">
-                              No applications found with the current filters
-                            </TableCell>
-                          </TableRow>
-                        )}
-                      </TableBody>
-                    </Table>
-                  </div>
-                </TabsContent>
-                
-                <TabsContent value="positions">
-                  <div className="grid md:grid-cols-2 gap-6">
-                    <div className="bg-white p-6 rounded-lg border border-gray-200">
-                      <Tabs defaultValue="volt" onValueChange={(value) => setPositionTab(value as 'volt' | 'project')}>
-                        <TabsList className="mb-4">
-                          <TabsTrigger value="volt">Volt Positions</TabsTrigger>
-                          <TabsTrigger value="project">Project Positions</TabsTrigger>
-                        </TabsList>
-                        
-                        <TabsContent value="volt">
-                          <div className="space-y-4">
-                            <h3 className="font-semibold text-lg">
-                              {editingPositionId !== null ? 'Edit Volt Position' : 'Add New Volt Position'}
-                            </h3>
-                            
-                            <div>
-                              <Label htmlFor="title">Position Title*</Label>
-                              <Input
-                                id="title"
-                                value={newPosition.title || ''}
-                                onChange={(e) => setNewPosition({...newPosition, title: e.target.value})}
-                                placeholder="e.g., Technology Consultant"
-                              />
-                            </div>
-                            
-                            <div>
-                              <Label htmlFor="description">Position Description*</Label>
-                              <Textarea
-                                id="description"
-                                value={newPosition.description || ''}
-                                onChange={(e) => setNewPosition({...newPosition, description: e.target.value})}
-                                placeholder="Describe the position and responsibilities"
-                                rows={4}
-                              />
-                            </div>
-                            
-                            <div>
-                              <Label>Application Deadline</Label>
-                              <div className="flex flex-col space-y-2">
-                                <Popover>
-                                  <PopoverTrigger asChild>
-                                    <Button
-                                      variant="outline"
-                                      className={cn(
-                                        "w-full justify-start text-left font-normal",
-                                        !deadlineDate && "text-muted-foreground"
-                                      )}
-                                    >
-                                      <Calendar className="mr-2 h-4 w-4" />
-                                      {deadlineDate ? format(deadlineDate, "PPP") : <span>Pick a deadline date</span>}
-                                    </Button>
-                                  </PopoverTrigger>
-                                  <PopoverContent className="w-auto p-0" align="start">
-                                    <CalendarComponent
-                                      mode="single"
-                                      selected={deadlineDate}
-                                      onSelect={setDeadlineDate}
-                                      initialFocus
-                                      disabled={(date) => date < new Date()}
-                                      className={cn("p-3 pointer-events-auto")}
-                                    />
-                                  </PopoverContent>
-                                </Popover>
-                                <p className="text-xs text-gray-500">
-                                  The position will automatically show a countdown timer from publish date until this deadline
-                                </p>
-                              </div>
-                            </div>
-                            
-                            <div>
-                              <Label>Requirements</Label>
-                              <div className="flex gap-2 mb-2">
-                                <Input
-                                  value={reqInput}
-                                  onChange={(e) => setReqInput(e.target.value)}
-                                  placeholder="e.g., Strong analytical skills"
-                                  className="flex-1"
-                                />
-                                <Button 
-                                  type="button"
-                                  size="sm"
-                                  onClick={handleAddRequirement}
-                                >
-                                  <Plus size={16} />
-                                </Button>
                               </div>
                               
-                              <div className="mt-2 space-y-2">
-                                {newPosition.requirements?.map((req, idx) => (
-                                  <div key={idx} className="flex items-center justify-between bg-gray-50 p-2 rounded">
-                                    <span>{req}</span>
-                                    <button 
-                                      onClick={() => handleRemoveRequirement(idx)}
-                                      className="text-red-500 hover:text-red-700"
-                                    >
-                                      <Trash size={16} />
-                                    </button>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                            
-                            <div className="pt-4">
-                              <Button onClick={handleSavePosition} className="w-full">
-                                {editingPositionId !== null ? 'Update Position' : 'Add Position'}
-                              </Button>
-                            </div>
-                          </div>
-                        </TabsContent>
-                        
-                        <TabsContent value="project">
-                          <div className="space-y-4">
-                            <h3 className="font-semibold text-lg">
-                              {editingPositionId !== null ? 'Edit Project Position' : 'Add New Project Position'}
-                            </h3>
-                            
-                            <div>
-                              <Label htmlFor="companyName">Company Name*</Label>
-                              <Input
-                                id="companyName"
-                                value={newPosition.companyName || ''}
-                                onChange={(e) => setNewPosition({...newPosition, companyName: e.target.value})}
-                                placeholder="e.g., Company X"
-                              />
-                            </div>
-                            
-                            <div>
-                              <Label htmlFor="projectDescription">Project Description*</Label>
-                              <Textarea
-                                id="projectDescription"
-                                value={newPosition.projectDescription || ''}
-                                onChange={(e) => setNewPosition({...newPosition, projectDescription: e.target.value})}
-                                placeholder="Describe the project"
-                                rows={3}
-                              />
-                            </div>
-                            
-                            <div>
-                              <Label htmlFor="title">Position Title*</Label>
-                              <Input
-                                id="title"
-                                value={newPosition.title || ''}
-                                onChange={(e) => setNewPosition({...newPosition, title: e.target.value})}
-                                placeholder="e.g., Data Scientist"
-                              />
-                            </div>
-                            
-                            <div>
-                              <Label htmlFor="description">Position Description*</Label>
-                              <Textarea
-                                id="description"
-                                value={newPosition.description || ''}
-                                onChange={(e) => setNewPosition({...newPosition, description: e.target.value})}
-                                placeholder="Describe the position and responsibilities"
-                                rows={3}
-                              />
-                            </div>
-                            
-                            <div>
-                              <Label>Application Deadline</Label>
-                              <div className="flex flex-col space-y-2">
-                                <Popover>
-                                  <PopoverTrigger asChild>
-                                    <Button
-                                      variant="outline"
-                                      className={cn(
-                                        "w-full justify-start text-left font-normal",
-                                        !deadlineDate && "text-muted-foreground"
-                                      )}
-                                    >
-                                      <Calendar className="mr-2 h-4 w-4" />
-                                      {deadlineDate ? format(deadlineDate, "PPP") : <span>Pick a deadline date</span>}
-                                    </Button>
-                                  </PopoverTrigger>
-                                  <PopoverContent className="w-auto p-0" align="start">
-                                    <CalendarComponent
-                                      mode="single"
-                                      selected={deadlineDate}
-                                      onSelect={setDeadlineDate}
-                                      initialFocus
-                                      disabled={(date) => date < new Date()}
-                                      className={cn("p-3 pointer-events-auto")}
-                                    />
-                                  </PopoverContent>
-                                </Popover>
-                                <p className="text-xs text-gray-500">
-                                  The position will automatically show a countdown timer from publish date until this deadline
-                                </p>
-                              </div>
-                            </div>
-                            
-                            <div>
-                              <Label>Preferred Majors</Label>
-                              <div className="flex gap-2 mb-2">
-                                <Input
-                                  value={majorInput}
-                                  onChange={(e) => setMajorInput(e.target.value)}
-                                  placeholder="e.g., Computer Science"
-                                  className="flex-1"
-                                />
-                                <Button 
-                                  type="button"
-                                  size="sm"
-                                  onClick={handleAddMajor}
-                                >
-                                  <Plus size={16} />
+                              <div className="pt-4">
+                                <Button onClick={handleSavePosition} className="w-full">
+                                  {editingPositionId !== null ? 'Update Position' : 'Add Position'}
                                 </Button>
                               </div>
+                            </div>
+                          </TabsContent>
+                          
+                          <TabsContent value="project">
+                            <div className="space-y-4">
+                              <h3 className="font-semibold text-lg">
+                                {editingPositionId !== null ? 'Edit Project Position' : 'Add New Project Position'}
+                              </h3>
                               
-                              <div className="mt-2 space-y-2">
-                                {newPosition.preferredMajors?.map((major, idx) => (
-                                  <div key={idx} className="flex items-center justify-between bg-gray-50 p-2 rounded">
-                                    <span>{major}</span>
-                                    <button 
-                                      onClick={() => handleRemoveMajor(idx)}
-                                      className="text-red-500 hover:text-red-700"
-                                    >
-                                      <Trash size={16} />
-                                    </button>
-                                  </div>
-                                ))}
+                              <div>
+                                <Label htmlFor="companyName">Company Name*</Label>
+                                <Input
+                                  id="companyName"
+                                  value={newPosition.companyName || ''}
+                                  onChange={(e) => setNewPosition({...newPosition, companyName: e.target.value})}
+                                  placeholder="e.g., Company X"
+                                />
                               </div>
-                            </div>
-                            
-                            <div className="pt-4">
-                              <Button onClick={handleSavePosition} className="w-full">
-                                {editingPositionId !== null ? 'Update Position' : 'Add Position'}
-                              </Button>
-                            </div>
-                          </div>
-                        </TabsContent>
-                      </Tabs>
-                    </div>
-                    
-                    <div>
-                      <h3 className="font-semibold text-lg mb-4">
-                        {positionTab === 'volt' ? 'Volt Positions' : 'Project Positions'}
-                      </h3>
-                      
-                      {filteredPositions.length > 0 ? (
-                        <div className="space-y-4">
-                          {filteredPositions.map(position => (
-                            <div key={position.id} className="border rounded-lg p-4">
-                              <div className="flex justify-between items-center mb-2">
-                                <h4 className="font-medium text-lg">{position.title}</h4>
-                                <div className="flex space-x-2">
-                                  <button
-                                    onClick={() => handleToggleActive(position.id)}
-                                    className={`px-2 py-1 rounded text-xs font-medium ${
-                                      position.active 
-                                        ? 'bg-green-100 text-green-800' 
-                                        : 'bg-gray-100 text-gray-800'
-                                    }`}
-                                  >
-                                    {position.active ? 'Active' : 'Inactive'}
-                                  </button>
-                                  <button
-                                    onClick={() => handleEditPosition(position)}
-                                    className="text-blue-600 hover:text-blue-800"
-                                  >
-                                    Edit
-                                  </button>
-                                  <button
-                                    onClick={() => handleDeletePosition(position.id)}
-                                    className="text-red-600 hover:text-red-800"
-                                  >
-                                    Delete
-                                  </button>
+                              
+                              <div>
+                                <Label htmlFor="projectDescription">Project Description*</Label>
+                                <Textarea
+                                  id="projectDescription"
+                                  value={newPosition.projectDescription || ''}
+                                  onChange={(e) => setNewPosition({...newPosition, projectDescription: e.target.value})}
+                                  placeholder="Describe the project"
+                                  rows={3}
+                                />
+                              </div>
+                              
+                              <div>
+                                <Label htmlFor="title">Position Title*</Label>
+                                <Input
+                                  id="title"
+                                  value={newPosition.title || ''}
+                                  onChange={(e) => setNewPosition({...newPosition, title: e.target.value})}
+                                  placeholder="e.g., Data Scientist"
+                                />
+                              </div>
+                              
+                              <div>
+                                <Label htmlFor="description">Position Description*</Label>
+                                <Textarea
+                                  id="description"
+                                  value={newPosition.description || ''}
+                                  onChange={(e) => setNewPosition({...newPosition, description: e.target.value})}
+                                  placeholder="Describe the position and responsibilities"
+                                  rows={3}
+                                />
+                              </div>
+                              
+                              <div>
+                                <Label>Application Deadline</Label>
+                                <div className="flex flex-col space-y-2">
+                                  <Popover>
+                                    <PopoverTrigger asChild>
+                                      <Button
+                                        variant="outline"
+                                        className={cn(
+                                          "w-full justify-start text-left font-normal",
+                                          !deadlineDate && "text-muted-foreground"
+                                        )}
+                                      >
+                                        <Calendar className="mr-2 h-4 w-4" />
+                                        {deadlineDate ? format(deadlineDate, "PPP") : <span>Pick a deadline date</span>}
+                                      </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-auto p-0" align="start">
+                                      <CalendarComponent
+                                        mode="single"
+                                        selected={deadlineDate}
+                                        onSelect={setDeadlineDate}
+                                        initialFocus
+                                        disabled={(date) => date < new Date()}
+                                      />
+                                    </PopoverContent>
+                                  </Popover>
+                                  <p className="text-xs text-gray-500">
+                                    The position will automatically show a countdown timer from publish date until this deadline
+                                  </p>
                                 </div>
                               </div>
                               
-                              <p className="text-gray-600 text-sm mb-2 line-clamp-2">{position.description}</p>
-                              
-                              {position.deadline && (
-                                <div className="text-sm mb-2">
-                                  <span className="font-medium">Deadline:</span>{' '}
-                                  <span>{format(new Date(position.deadline), 'PPP')}</span>
-                                  {position.publishedDate && position.active && (
-                                    <div>
-                                      <span className="font-medium">Time remaining:</span>{' '}
-                                      <span className={getCountdown(position.deadline, position.publishedDate)?.isNearDeadline ? 'text-red-600 font-medium' : ''}>
-                                        {getCountdown(position.deadline, position.publishedDate)?.text || 'Not published'}
-                                      </span>
+                              <div>
+                                <Label>Preferred Majors</Label>
+                                <div className="flex gap-2 mb-2">
+                                  <Input
+                                    value={majorInput}
+                                    onChange={(e) => setMajorInput(e.target.value)}
+                                    placeholder="e.g., Computer Science"
+                                    className="flex-1"
+                                  />
+                                  <Button 
+                                    type="button"
+                                    size="sm"
+                                    onClick={handleAddMajor}
+                                  >
+                                    <Plus size={16} />
+                                  </Button>
+                                </div>
+                                
+                                <div className="mt-2 space-y-2">
+                                  {newPosition.preferredMajors?.map((major, idx) => (
+                                    <div key={idx} className="flex items-center justify-between bg-gray-50 p-2 rounded">
+                                      <span>{major}</span>
+                                      <button 
+                                        onClick={() => handleRemoveMajor(idx)}
+                                        className="text-red-500 hover:text-red-700"
+                                        type="button"
+                                      >
+                                        <Trash size={16} />
+                                      </button>
                                     </div>
-                                  )}
+                                  ))}
                                 </div>
-                              )}
+                              </div>
                               
-                              {positionTab === 'project' && position.companyName && (
-                                <div className="text-sm text-gray-500">
-                                  <span className="font-medium">Company:</span> {position.companyName}
+                              <div className="pt-4">
+                                <Button onClick={handleSavePosition} className="w-full">
+                                  {editingPositionId !== null ? 'Update Position' : 'Add Position'}
+                                </Button>
+                              </div>
+                            </div>
+                          </TabsContent>
+                        </Tabs>
+                      </div>
+                      
+                      <div>
+                        <h3 className="font-semibold text-lg mb-4">
+                          {positionTab === 'volt' ? 'Volt Positions' : 'Project Positions'}
+                        </h3>
+                        
+                        {filteredPositions.length > 0 ? (
+                          <div className="space-y-4">
+                            {filteredPositions.map(position => (
+                              <div key={position.id} className="border rounded-lg p-4">
+                                <div className="flex justify-between items-center mb-2">
+                                  <h4 className="font-medium text-lg">{position.title}</h4>
+                                  <div className="flex space-x-2">
+                                    <button
+                                      onClick={() => handleToggleActive(position.id)}
+                                      className={`px-2 py-1 rounded text-xs font-medium ${
+                                        position.active 
+                                          ? 'bg-green-100 text-green-800' 
+                                          : 'bg-gray-100 text-gray-800'
+                                      }`}
+                                    >
+                                      {position.active ? 'Active' : 'Inactive'}
+                                    </button>
+                                    <button
+                                      onClick={() => handleEditPosition(position)}
+                                      className="text-blue-600 hover:text-blue-800"
+                                    >
+                                      Edit
+                                    </button>
+                                    <button
+                                      onClick={() => handleDeletePosition(position.id)}
+                                      className="text-red-600 hover:text-red-800"
+                                    >
+                                      Delete
+                                    </button>
+                                  </div>
                                 </div>
-                              )}
-                              
-                              {position.requirements && position.requirements.length > 0 && (
-                                <div className="mt-2">
-                                  <span className="text-sm font-medium">Requirements: </span>
-                                  <span className="text-sm text-gray-500">
-                                    {position.requirements.join(', ')}
-                                  </span>
-                                </div>
-                              )}
+                                
+                                <p className="text-gray-600 text-sm mb-2 line-clamp-2">{position.description}</p>
+                                
+                                {position.deadline && (
+                                  <div className="text-sm mb-2">
+                                    <span className="font-medium">Deadline:</span>{' '}
+                                    <span>{format(new Date(position.deadline), 'PPP')}</span>
+                                    {position.publishedDate && position.active && (
+                                      <div>
+                                        <span className="font-medium">Time remaining:</span>{' '}
+                                        <span className={getCountdown(position.deadline, position.publishedDate)?.isNearDeadline ? 'text-red-600 font-medium' : ''}>
+                                          {getCountdown(position.deadline, position.publishedDate)?.text || 'Not published'}
+                                        </span>
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
+                                
+                                {positionTab === 'project' && position.companyName && (
+                                  <div className="text-sm text-gray-500">
+                                    <span className="font-medium">Company:</span> {position.companyName}
+                                  </div>
+                                )}
+                                
+                                {position.requirements && position.requirements.length > 0 && (
+                                  <div className="mt-2">
+                                    <span className="text-sm font-medium">Requirements: </span>
+                                    <span className="text-sm text-gray-500">
+                                      {position.requirements.join(', ')}
+                                    </span>
+                                  </div>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="text-center py-8 bg-gray-50 rounded-lg border border-dashed border-gray-300">
+                            <p className="text-gray-500">No positions added yet.</p>
+                            <p className="text-gray-400 text-sm">Create a new position using the form on the left.</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </TabsContent>
+
+                  <TabsContent value="messages">
+                    <div className="bg-white rounded-lg border border-gray-200 p-6">
+                      <h3 className="font-semibold text-lg mb-6">Contact Form Messages</h3>
+                      
+                      {contactMessages.length > 0 ? (
+                        <div className="space-y-6">
+                          {contactMessages.map((message, idx) => (
+                            <div key={idx} className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                              <div className="flex justify-between mb-2">
+                                <h4 className="font-medium">{message.name}</h4>
+                                <span className="text-sm text-gray-500">
+                                  {new Date(message.date).toLocaleDateString()}
+                                </span>
+                              </div>
+                              <div className="text-sm text-gray-600 mb-3">
+                                <a href={`mailto:${message.email}`} className="text-blue-600 hover:underline">
+                                  {message.email}
+                                </a>
+                              </div>
+                              <p className="text-gray-700 whitespace-pre-wrap">{message.message}</p>
                             </div>
                           ))}
                         </div>
                       ) : (
-                        <div className="text-center py-8 bg-gray-50 rounded-lg border border-dashed border-gray-300">
-                          <p className="text-gray-500">No positions added yet.</p>
-                          <p className="text-gray-400 text-sm">Create a new position using the form on the left.</p>
+                        <div className="text-center py-12 bg-gray-50 rounded-lg border border-dashed border-gray-300">
+                          <p className="text-gray-500">No contact messages received yet.</p>
                         </div>
                       )}
                     </div>
-                  </div>
-                </TabsContent>
-              </Tabs>
-            </div>
+                  </TabsContent>
+                </Tabs>
+              </div>
+            )}
             
             {selectedApplication && activeTab === 'applications' && (
               <div className="bg-white rounded-xl shadow-md p-6">

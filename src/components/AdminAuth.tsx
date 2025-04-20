@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/components/ui/use-toast';
 import { LockKeyhole } from 'lucide-react';
+import { verifyAdminPassword } from '../services/mongoDBService';
 
 interface AdminAuthProps {
   children: React.ReactNode;
@@ -15,25 +16,39 @@ const AdminAuth = ({ children }: AdminAuthProps) => {
   const [isAuthenticated, setIsAuthenticated] = useState(() => {
     return localStorage.getItem('adminAuthenticated') === 'true';
   });
+  const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsLoading(true);
     
-    if (password === 'VCGEindhovenLebanon10452*') {
-      setIsAuthenticated(true);
-      localStorage.setItem('adminAuthenticated', 'true');
+    try {
+      const isValid = await verifyAdminPassword(password);
+      
+      if (isValid) {
+        setIsAuthenticated(true);
+        localStorage.setItem('adminAuthenticated', 'true');
+        toast({
+          title: "Success",
+          description: "You have successfully logged in as admin.",
+        });
+      } else {
+        toast({
+          title: "Access Denied",
+          description: "Incorrect password. Please try again.",
+          variant: "destructive",
+        });
+        setPassword('');
+      }
+    } catch (error) {
       toast({
-        title: "Success",
-        description: "You have successfully logged in as admin.",
-      });
-    } else {
-      toast({
-        title: "Access Denied",
-        description: "Incorrect password. Please try again.",
+        title: "Error",
+        description: "An error occurred during login. Please try again.",
         variant: "destructive",
       });
-      setPassword('');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -86,8 +101,8 @@ const AdminAuth = ({ children }: AdminAuthProps) => {
               />
             </div>
             
-            <Button type="submit" className="w-full">
-              Login
+            <Button type="submit" className="w-full" disabled={isLoading}>
+              {isLoading ? 'Logging in...' : 'Login'}
             </Button>
           </form>
           

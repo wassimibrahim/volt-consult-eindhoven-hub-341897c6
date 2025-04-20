@@ -1,10 +1,10 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from '@/components/ui/use-toast';
+import { saveApplication } from '../services/mongoDBService';
 
 interface ApplyFormProps {
   positionTitle: string;
@@ -73,19 +73,15 @@ const ApplyForm: React.FC<ApplyFormProps> = ({ positionTitle, applicationType })
         documentData.push(motivationLetterBase64);
       }
       
-      // Get existing applications from localStorage or initialize empty array
-      const existingApplications = JSON.parse(localStorage.getItem('applications') || '[]');
-      
-      // Add the new application with an ID and timestamp
+      // Create application object
       const newApplication = {
-        id: existingApplications.length > 0 ? Math.max(...existingApplications.map((app: any) => app.id)) + 1 : 1,
         fullName: `${formData.firstName} ${formData.familyName}`,
         position: positionTitle,
         type: applicationType,
         date: new Date().toISOString().split('T')[0],
-        status: 'pending',
+        status: 'pending' as const,
         documents: ['CV', 'Motivation Letter'],
-        documentData: documentData, // Store base64 encoded files
+        documentData: documentData,
         details: {
           firstName: formData.firstName,
           familyName: formData.familyName,
@@ -100,11 +96,8 @@ const ApplyForm: React.FC<ApplyFormProps> = ({ positionTitle, applicationType })
         }
       };
       
-      // Save updated applications to localStorage
-      localStorage.setItem('applications', JSON.stringify([...existingApplications, newApplication]));
-      
-      // Log for debugging
-      console.log('Application submitted:', { ...newApplication, documentData: 'Base64 data (omitted for log)' });
+      // Save application using service
+      await saveApplication(newApplication);
       
       // Show success message
       toast({

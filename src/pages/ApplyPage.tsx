@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import Navbar from '../components/Navbar';
@@ -7,22 +6,9 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { ChevronDown, ChevronRight, ChevronLeft, Clock } from 'lucide-react';
 import ApplyForm from '../components/ApplyForm';
 import { differenceInDays, differenceInHours, differenceInMinutes } from 'date-fns';
+import { getPositions, PositionType } from '../services/mongoDBService';
 
-type PositionType = {
-  id: number;
-  title: string;
-  description: string;
-  requirements?: string[];
-  preferredMajors?: string[];
-  type: 'volt' | 'project';
-  companyName?: string;
-  projectDescription?: string;
-  active: boolean;
-  deadline?: string;
-  publishedDate?: string;
-};
-
-// Fallback positions if none are found in localStorage
+// Fallback positions if none are found in MongoDB or localStorage
 const fallbackVoltPositions: PositionType[] = [
   {
     id: 1,
@@ -47,16 +33,29 @@ const ApplyPage = () => {
   const [selectedPosition, setSelectedPosition] = useState<PositionType | null>(null);
   const [positions, setPositions] = useState<PositionType[]>([]);
   const [countdowns, setCountdowns] = useState<Record<number, { text: string, isNearDeadline: boolean } | null>>({});
+  const [loading, setLoading] = useState(true);
   
-  // Load positions from localStorage
+  // Load positions from MongoDB via our service
   useEffect(() => {
-    const storedPositions = localStorage.getItem('positions');
-    if (storedPositions) {
-      setPositions(JSON.parse(storedPositions));
-    } else {
-      // Use fallback positions if none found in localStorage
-      setPositions(fallbackVoltPositions);
-    }
+    const loadPositions = async () => {
+      setLoading(true);
+      try {
+        const fetchedPositions = await getPositions();
+        if (fetchedPositions && fetchedPositions.length > 0) {
+          setPositions(fetchedPositions);
+        } else {
+          // Use fallback positions if none found
+          setPositions(fallbackVoltPositions);
+        }
+      } catch (error) {
+        console.error('Error loading positions:', error);
+        setPositions(fallbackVoltPositions);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    loadPositions();
   }, []);
 
   // Update countdowns every minute
@@ -174,7 +173,11 @@ const ApplyPage = () => {
             </p>
           </div>
 
-          {!selectedType ? (
+          {loading ? (
+            <div className="flex justify-center items-center py-12">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#F00000]"></div>
+            </div>
+          ) : !selectedType ? (
             <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
               <div 
                 className="bg-white p-8 rounded-xl shadow-lg border border-gray-100 hover:shadow-xl transition-shadow cursor-pointer"
