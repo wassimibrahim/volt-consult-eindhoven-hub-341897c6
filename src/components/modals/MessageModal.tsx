@@ -36,7 +36,7 @@ const MessageModal = ({ message, isOpen, onClose }: MessageModalProps) => {
           
           <div>
             <h4 className="font-semibold">Received On</h4>
-            <p>{new Date(message.createdAt).toLocaleDateString()}</p>
+            <p>{new Date(message.date).toLocaleDateString()}</p>
           </div>
         </div>
       </DialogContent>

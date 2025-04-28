@@ -108,7 +108,7 @@ export const getPositions = async (): Promise<PositionType[]> => {
 
 export const savePosition = async (position: Omit<PositionType, 'id'>): Promise<PositionType> => {
   try {
-    // Fix: Use a single object for insert, not an array
+    // Fix: Use a properly formatted object for insert, not treating it as an array
     const { data, error } = await supabase
       .from('positions')
       .insert({

@@ -63,7 +63,7 @@ const ApplicationModal = ({ application, isOpen, onClose }: ApplicationModalProp
           
           <div>
             <h4 className="font-semibold">Applied On</h4>
-            <p>{new Date(application.createdAt).toLocaleDateString()}</p>
+            <p>{new Date(application.date).toLocaleDateString()}</p>
           </div>
         </div>
       </DialogContent>
