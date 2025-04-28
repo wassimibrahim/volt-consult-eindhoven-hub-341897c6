@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
@@ -6,7 +7,7 @@ import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
-import { FileText, Search, Download, UserCheck, UserX, Plus, Save, Trash, Calendar } from 'lucide-react';
+import { FileText, Search, UserCheck, UserX, Plus, Trash, Calendar } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { toast } from '@/components/ui/use-toast';
@@ -31,7 +32,7 @@ const sampleApplications: ApplicationType[] = [
   {
     id: '1',
     fullName: 'John Smith',
-    email: 'john.smith@example.com', // Added required email property
+    email: 'john.smith@example.com',
     position: 'Technology Consultant',
     type: 'volt',
     date: '2025-04-10',
@@ -47,7 +48,7 @@ const sampleApplications: ApplicationType[] = [
   {
     id: '2',
     fullName: 'Emma Johnson',
-    email: 'emma.johnson@example.com', // Added required email property
+    email: 'emma.johnson@example.com',
     position: 'Data Analyst',
     type: 'volt',
     date: '2025-04-09',
@@ -880,4 +881,82 @@ const AdminPage = () => {
                 
                 <div className="grid md:grid-cols-2 gap-6">
                   <div>
-                    <h3 className="text-lg font-semibold mb-4
+                    <h3 className="text-lg font-semibold mb-4">Application Details</h3>
+                    
+                    <div className="space-y-4">
+                      <div>
+                        <p className="text-sm text-gray-500">Email</p>
+                        <p className="font-medium">{selectedApplication.email}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-500">Application Date</p>
+                        <p className="font-medium">{new Date(selectedApplication.date).toLocaleDateString()}</p>
+                      </div>
+                      
+                      {selectedApplication.details && typeof selectedApplication.details === 'object' && (
+                        <>
+                          {selectedApplication.details.birthDate && (
+                            <div>
+                              <p className="text-sm text-gray-500">Birth Date</p>
+                              <p className="font-medium">{selectedApplication.details.birthDate}</p>
+                            </div>
+                          )}
+                          
+                          {selectedApplication.details.degreeProgram && (
+                            <div>
+                              <p className="text-sm text-gray-500">Degree Program</p>
+                              <p className="font-medium">{selectedApplication.details.degreeProgram}</p>
+                            </div>
+                          )}
+                          
+                          {selectedApplication.details.yearOfStudy && (
+                            <div>
+                              <p className="text-sm text-gray-500">Year of Study</p>
+                              <p className="font-medium">{selectedApplication.details.yearOfStudy}</p>
+                            </div>
+                          )}
+                          
+                          {selectedApplication.details.linkedinProfile && (
+                            <div>
+                              <p className="text-sm text-gray-500">LinkedIn Profile</p>
+                              <a href={selectedApplication.details.linkedinProfile} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline font-medium">
+                                {selectedApplication.details.linkedinProfile}
+                              </a>
+                            </div>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <h3 className="text-lg font-semibold mb-4">Documents</h3>
+                    <div className="space-y-3">
+                      {selectedApplication.documents.map((doc, idx) => (
+                        <div key={idx} className="flex items-center justify-between border p-3 rounded bg-gray-50">
+                          <div className="flex items-center gap-2">
+                            <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center">
+                              <FileText size={20} />
+                            </div>
+                            <span>{doc}</span>
+                          </div>
+                          <Button variant="outline" size="sm" onClick={() => handleDocumentDownload(selectedApplication, idx)}>
+                            <FileText size={16} className="mr-2" />
+                            Download
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </AdminAuth>
+        </div>
+      </div>
+      <Footer />
+    </div>
+  );
+};
+
+export default AdminPage;
