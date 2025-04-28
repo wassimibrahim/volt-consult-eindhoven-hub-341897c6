@@ -31,6 +31,7 @@ const sampleApplications: ApplicationType[] = [
   {
     id: '1',
     fullName: 'John Smith',
+    email: 'john.smith@example.com', // Added required email property
     position: 'Technology Consultant',
     type: 'volt',
     date: '2025-04-10',
@@ -46,6 +47,7 @@ const sampleApplications: ApplicationType[] = [
   {
     id: '2',
     fullName: 'Emma Johnson',
+    email: 'emma.johnson@example.com', // Added required email property
     position: 'Data Analyst',
     type: 'volt',
     date: '2025-04-09',
@@ -170,7 +172,7 @@ const AdminPage = () => {
     return matchesSearch && matchesType && matchesStatus;
   });
 
-  const handleStatusChange = async (id: number, status: 'pending' | 'reviewed' | 'accepted' | 'rejected') => {
+  const handleStatusChange = async (id: string, status: 'pending' | 'reviewed' | 'accepted' | 'rejected') => {
     try {
       const updatedApplications = await updateApplicationStatus(id, status);
       setApplications(updatedApplications);
@@ -304,7 +306,7 @@ const AdminPage = () => {
     setDeadlineDate(position.deadline ? new Date(position.deadline) : undefined);
   };
 
-  const handleDeletePosition = async (id: number) => {
+  const handleDeletePosition = async (id: string) => {
     try {
       await deletePosition(id);
       
@@ -337,7 +339,7 @@ const AdminPage = () => {
     }
   };
 
-  const handleToggleActive = async (id: number) => {
+  const handleToggleActive = async (id: string) => {
     try {
       const position = positions.find(p => p.id === id);
       if (!position) return;
@@ -878,98 +880,4 @@ const AdminPage = () => {
                 
                 <div className="grid md:grid-cols-2 gap-6">
                   <div>
-                    <h3 className="text-lg font-semibold mb-4">Personal Information</h3>
-                    <div className="space-y-3">
-                      <div>
-                        <p className="text-gray-500 text-sm">Full Name</p>
-                        <p className="font-medium">{selectedApplication.fullName}</p>
-                      </div>
-                      {selectedApplication.details.email && (
-                        <div>
-                          <p className="text-gray-500 text-sm">Email</p>
-                          <p>{selectedApplication.details.email}</p>
-                        </div>
-                      )}
-                      {selectedApplication.details.phoneNumber && (
-                        <div>
-                          <p className="text-gray-500 text-sm">Phone Number</p>
-                          <p>{selectedApplication.details.phoneNumber}</p>
-                        </div>
-                      )}
-                      <div>
-                        <p className="text-gray-500 text-sm">Birth Date</p>
-                        <p>{new Date(selectedApplication.details.birthDate).toLocaleDateString()}</p>
-                      </div>
-                      <div>
-                        <p className="text-gray-500 text-sm">Degree Program</p>
-                        <p>{selectedApplication.details.degreeProgram}</p>
-                      </div>
-                      <div>
-                        <p className="text-gray-500 text-sm">Year of Study</p>
-                        <p>{selectedApplication.details.yearOfStudy}</p>
-                      </div>
-                      <div>
-                        <p className="text-gray-500 text-sm">LinkedIn Profile</p>
-                        <a 
-                          href={selectedApplication.details.linkedinProfile} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="text-blue-600 hover:underline"
-                        >
-                          {selectedApplication.details.linkedinProfile}
-                        </a>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <h3 className="text-lg font-semibold mb-4">Documents</h3>
-                    <div className="space-y-4">
-                      {selectedApplication.documents.map((doc, idx) => (
-                        <div key={idx} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
-                          <div className="flex items-center gap-3">
-                            <FileText className="text-gray-500" />
-                            <span>{doc}</span>
-                          </div>
-                          <button 
-                            className="text-blue-600 hover:text-blue-800 flex items-center gap-1"
-                            onClick={() => handleDocumentDownload(selectedApplication, idx)}
-                          >
-                            <Download size={16} />
-                            Download
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                    
-                    <div className="mt-6 pt-6 border-t">
-                      <h3 className="text-lg font-semibold mb-4">Application Status</h3>
-                      <div className="flex flex-wrap gap-2">
-                        {(['pending', 'reviewed', 'accepted', 'rejected'] as const).map((status) => (
-                          <button
-                            key={status}
-                            className={`px-4 py-2 rounded-lg capitalize ${
-                              selectedApplication.status === status 
-                                ? statusColors[status]
-                                : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
-                            }`}
-                            onClick={() => handleStatusChange(selectedApplication.id, status)}
-                          >
-                            {status}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-          </AdminAuth>
-        </div>
-      </div>
-      <Footer />
-    </div>
-  );
-};
-
-export default AdminPage;
+                    <h3 className="text-lg font-semibold mb-4

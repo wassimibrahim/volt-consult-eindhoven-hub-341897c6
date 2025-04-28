@@ -108,6 +108,7 @@ export const getPositions = async (): Promise<PositionType[]> => {
 
 export const savePosition = async (position: Omit<PositionType, 'id'>): Promise<PositionType> => {
   try {
+    // Fix: Use a single object for insert, not an array
     const { data, error } = await supabase
       .from('positions')
       .insert({
@@ -218,21 +219,26 @@ export const getApplications = async (): Promise<ApplicationType[]> => {
     
     // Transform the data to match the expected format
     return (data || []).map(item => {
-      // Ensure the details object matches our expected type
-      const typedDetails = (typeof item.details === 'object' && item.details !== null)
-        ? item.details as {
-            firstName?: string;
-            familyName?: string;
-            birthDate: string;
-            degreeProgram?: string;
-            yearOfStudy?: string;
-            phoneNumber?: string;
-            email?: string;
-            linkedinProfile?: string;
-          }
-        : {
-            birthDate: new Date().toISOString().split('T')[0]
-          };
+      // Ensure the details object matches our expected type by safely parsing it
+      let typedDetails: ApplicationType['details'];
+      
+      if (typeof item.details === 'object' && item.details !== null) {
+        typedDetails = {
+          birthDate: (item.details as any).birthDate || new Date().toISOString().split('T')[0],
+          firstName: (item.details as any).firstName,
+          familyName: (item.details as any).familyName,
+          degreeProgram: (item.details as any).degreeProgram,
+          yearOfStudy: (item.details as any).yearOfStudy,
+          phoneNumber: (item.details as any).phoneNumber,
+          email: (item.details as any).email,
+          linkedinProfile: (item.details as any).linkedinProfile
+        };
+      } else {
+        // Default details if missing
+        typedDetails = {
+          birthDate: new Date().toISOString().split('T')[0]
+        };
+      }
       
       return {
         id: item.id,

@@ -8,20 +8,20 @@ export interface User {
 }
 
 export interface Message {
-  _id: string;
+  id: string; // Changed from _id to id to be consistent with Supabase
   name: string;
   email: string;
   message: string;
-  createdAt: Date;
+  date: string; // Changed from createdAt: Date to date: string
 }
 
 export interface Application {
-  _id: string;
+  id: string; // Changed from _id to id to be consistent with Supabase
   fullName: string;
   email: string;
   position: string;
   status: 'pending' | 'reviewed' | 'accepted' | 'rejected';
   cv: string;
   motivationLetter: string;
-  createdAt: Date;
+  date: string; // Changed from createdAt: Date to date: string
 }
