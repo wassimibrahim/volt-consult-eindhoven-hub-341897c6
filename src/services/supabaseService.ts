@@ -108,21 +108,22 @@ export const getPositions = async (): Promise<PositionType[]> => {
 
 export const savePosition = async (position: Omit<PositionType, 'id'>): Promise<PositionType> => {
   try {
-    // Fix: Use a properly formatted object for insert, not treating it as an array
+    const insertData = {
+      title: position.title,
+      description: position.description,
+      type: position.type,
+      requirements: position.requirements || [],
+      preferred_majors: position.preferredMajors || [],
+      company_name: position.companyName,
+      project_description: position.projectDescription,
+      active: position.active,
+      published_date: position.publishedDate ? new Date(position.publishedDate) : new Date(),
+      deadline: position.deadline ? new Date(position.deadline) : null
+    };
+
     const { data, error } = await supabase
       .from('positions')
-      .insert({
-        title: position.title,
-        description: position.description,
-        type: position.type,
-        requirements: position.requirements || [],
-        preferred_majors: position.preferredMajors || [],
-        company_name: position.companyName,
-        project_description: position.projectDescription,
-        active: position.active,
-        published_date: position.publishedDate ? new Date(position.publishedDate) : new Date(),
-        deadline: position.deadline ? new Date(position.deadline) : null
-      })
+      .insert(insertData)
       .select()
       .single();
     

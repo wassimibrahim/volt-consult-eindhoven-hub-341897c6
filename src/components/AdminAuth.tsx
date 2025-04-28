@@ -22,9 +22,20 @@ const AdminAuth = ({ children }: AdminAuthProps) => {
   useEffect(() => {
     // Check if user is already authenticated with Supabase
     const checkAuth = async () => {
-      const { data } = await supabase.auth.getSession();
-      if (data.session) {
+      // Check local storage first
+      if (localStorage.getItem('adminAuthenticated') === 'true') {
         setIsAuthenticated(true);
+        return;
+      }
+      
+      try {
+        // Then check Supabase auth
+        const { data } = await supabase.auth.getSession();
+        if (data.session) {
+          setIsAuthenticated(true);
+        }
+      } catch (error) {
+        console.error("Error checking auth:", error);
       }
     };
     
