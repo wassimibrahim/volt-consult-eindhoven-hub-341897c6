@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/components/ui/use-toast';
 import { LockKeyhole } from 'lucide-react';
-import { verifyAdminPassword, login, logout } from '../services/mongoDBService';
+import { verifyAdminPassword, login, logout } from '../services/supabaseService';
 import { supabase } from '@/integrations/supabase/client';
 
 interface AdminAuthProps {
@@ -56,26 +56,35 @@ const AdminAuth = ({ children }: AdminAuthProps) => {
     setIsLoading(true);
     
     try {
-      // For demo purposes only - in a real app you would use a proper auth flow
-      if (email && password) {
-        // Try to log in with Supabase
-        await login(email, password);
-      } else {
-        // Fallback to password-only auth
-        const isValid = await verifyAdminPassword(password);
-        
-        if (isValid) {
+      // For demo purposes only - try password-only auth first
+      const isValid = await verifyAdminPassword(password);
+      
+      if (isValid) {
+        setIsAuthenticated(true);
+        localStorage.setItem('adminAuthenticated', 'true');
+        toast({
+          title: "Success",
+          description: "You have successfully logged in as admin.",
+        });
+      } 
+      // Only try email/password login if both are provided and simple password check failed
+      else if (email && password) {
+        try {
+          // Try to log in with Supabase
+          await login(email, password);
           setIsAuthenticated(true);
           localStorage.setItem('adminAuthenticated', 'true');
-        } else {
+          toast({
+            title: "Success",
+            description: "You have successfully logged in as admin.",
+          });
+        } catch (error) {
+          console.error('Login error:', error);
           throw new Error('Invalid credentials');
         }
+      } else {
+        throw new Error('Invalid credentials');
       }
-      
-      toast({
-        title: "Success",
-        description: "You have successfully logged in as admin.",
-      });
     } catch (error) {
       console.error('Login error:', error);
       toast({
@@ -157,6 +166,9 @@ const AdminAuth = ({ children }: AdminAuthProps) => {
                 placeholder="Enter password"
                 required
               />
+              <p className="text-xs text-gray-500 mt-1">
+                For demo purposes, use password: <strong>admin123</strong>
+              </p>
             </div>
             
             <Button type="submit" className="w-full" disabled={isLoading}>

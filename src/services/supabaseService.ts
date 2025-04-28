@@ -117,8 +117,8 @@ export const savePosition = async (position: Omit<PositionType, 'id'>): Promise<
       company_name: position.companyName,
       project_description: position.projectDescription,
       active: position.active,
-      published_date: position.publishedDate ? new Date(position.publishedDate) : new Date(),
-      deadline: position.deadline ? new Date(position.deadline) : null
+      published_date: position.publishedDate ? position.publishedDate : new Date().toISOString(),
+      deadline: position.deadline ? position.deadline : null
     };
 
     const { data, error } = await supabase
@@ -162,8 +162,8 @@ export const updatePosition = async (id: string, position: Partial<PositionType>
     if (position.companyName) updateData.company_name = position.companyName;
     if (position.projectDescription) updateData.project_description = position.projectDescription;
     if (position.active !== undefined) updateData.active = position.active;
-    if (position.publishedDate) updateData.published_date = new Date(position.publishedDate);
-    if (position.deadline) updateData.deadline = new Date(position.deadline);
+    if (position.publishedDate) updateData.published_date = position.publishedDate;
+    if (position.deadline) updateData.deadline = position.deadline;
     
     const { data, error } = await supabase
       .from('positions')
