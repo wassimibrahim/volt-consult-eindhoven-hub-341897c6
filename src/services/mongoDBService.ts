@@ -14,9 +14,6 @@ import {
   updateApplicationStatus,
   getContactMessages,
   saveContactMessage,
-  PositionType,
-  ApplicationType,
-  ContactMessage
 } from './supabaseService';
 
 // Re-export everything from the Supabase service
@@ -34,7 +31,7 @@ export {
   updateApplicationStatus,
   getContactMessages,
   saveContactMessage,
-  PositionType,
-  ApplicationType,
-  ContactMessage
 };
+
+// Re-export types using the "export type" syntax
+export type { PositionType, ApplicationType, ContactMessage } from './supabaseService';

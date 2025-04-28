@@ -148,7 +148,7 @@ export const savePosition = async (position: Omit<PositionType, 'id'>): Promise<
   }
 };
 
-export const updatePosition = async (id: string | number, position: Partial<PositionType>): Promise<PositionType> => {
+export const updatePosition = async (id: string, position: Partial<PositionType>): Promise<PositionType> => {
   try {
     const updateData: any = {};
     
@@ -193,7 +193,7 @@ export const updatePosition = async (id: string | number, position: Partial<Posi
   }
 };
 
-export const deletePosition = async (id: string | number): Promise<void> => {
+export const deletePosition = async (id: string): Promise<void> => {
   try {
     const { error } = await supabase
       .from('positions')
@@ -217,20 +217,36 @@ export const getApplications = async (): Promise<ApplicationType[]> => {
     if (error) throw error;
     
     // Transform the data to match the expected format
-    return (data || []).map(item => ({
-      id: item.id,
-      fullName: item.full_name,
-      email: item.email,
-      position: item.position,
-      type: item.position_type as 'volt' | 'project',
-      date: item.application_date ? new Date(item.application_date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
-      status: item.status as 'pending' | 'reviewed' | 'accepted' | 'rejected',
-      documents: ['CV', 'Motivation Letter'],
-      documentData: [item.cv_url, item.motivation_letter_url].filter(Boolean),
-      details: item.details || {
-        birthDate: '',
-      }
-    }));
+    return (data || []).map(item => {
+      // Ensure the details object matches our expected type
+      const typedDetails = (typeof item.details === 'object' && item.details !== null)
+        ? item.details as {
+            firstName?: string;
+            familyName?: string;
+            birthDate: string;
+            degreeProgram?: string;
+            yearOfStudy?: string;
+            phoneNumber?: string;
+            email?: string;
+            linkedinProfile?: string;
+          }
+        : {
+            birthDate: new Date().toISOString().split('T')[0]
+          };
+      
+      return {
+        id: item.id,
+        fullName: item.full_name,
+        email: item.email,
+        position: item.position,
+        type: item.position_type as 'volt' | 'project',
+        date: item.application_date ? new Date(item.application_date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+        status: item.status as 'pending' | 'reviewed' | 'accepted' | 'rejected',
+        documents: ['CV', 'Motivation Letter'],
+        documentData: [item.cv_url, item.motivation_letter_url].filter(Boolean),
+        details: typedDetails
+      };
+    });
   } catch (error) {
     console.error('Error fetching applications:', error);
     return [];
@@ -294,7 +310,16 @@ export const saveApplication = async (application: {
       status: data.status as 'pending' | 'reviewed' | 'accepted' | 'rejected',
       documents: ['CV', 'Motivation Letter'],
       documentData: [data.cv_url, data.motivation_letter_url].filter(Boolean),
-      details: data.details || {
+      details: data.details as {
+        firstName?: string;
+        familyName?: string;
+        birthDate: string;
+        degreeProgram?: string;
+        yearOfStudy?: string;
+        phoneNumber?: string;
+        email?: string;
+        linkedinProfile?: string;
+      } || {
         birthDate: '',
       }
     };
@@ -304,7 +329,7 @@ export const saveApplication = async (application: {
   }
 };
 
-export const updateApplicationStatus = async (id: string | number, status: 'pending' | 'reviewed' | 'accepted' | 'rejected'): Promise<ApplicationType[]> => {
+export const updateApplicationStatus = async (id: string, status: 'pending' | 'reviewed' | 'accepted' | 'rejected'): Promise<ApplicationType[]> => {
   try {
     const { error } = await supabase
       .from('applications')

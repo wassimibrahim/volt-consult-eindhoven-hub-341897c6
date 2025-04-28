@@ -11,7 +11,7 @@ import { getPositions, PositionType } from '../services/mongoDBService';
 // Fallback positions if none are found in MongoDB or localStorage
 const fallbackVoltPositions: PositionType[] = [
   {
-    id: 1,
+    id: '1',
     title: 'Technology Consultant',
     description: 'As a Technology Consultant at Volt, you will collaborate with clients to develop strategic technology solutions, conduct research, and implement innovative approaches to complex technical challenges.',
     requirements: ['Strong analytical skills', 'Technical background or interest', 'Excellent communication', 'Problem-solving aptitude'],
@@ -19,7 +19,7 @@ const fallbackVoltPositions: PositionType[] = [
     active: true
   },
   {
-    id: 2,
+    id: '2',
     title: 'Data Analyst',
     description: 'Data Analysts at Volt process and interpret complex data sets, create visualizations, extract insights, and develop data-driven recommendations for our clients.',
     requirements: ['Experience with data analysis tools', 'Statistical knowledge', 'Programming skills (Python/R preferable)', 'Attention to detail'],

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
@@ -30,7 +29,7 @@ import {
 
 const sampleApplications: ApplicationType[] = [
   {
-    id: 1,
+    id: '1',
     fullName: 'John Smith',
     position: 'Technology Consultant',
     type: 'volt',
@@ -45,7 +44,7 @@ const sampleApplications: ApplicationType[] = [
     }
   },
   {
-    id: 2,
+    id: '2',
     fullName: 'Emma Johnson',
     position: 'Data Analyst',
     type: 'volt',
@@ -87,7 +86,7 @@ const AdminPage = () => {
   const [majorInput, setMajorInput] = useState('');
   const [activeTab, setActiveTab] = useState<'applications' | 'positions' | 'messages'>('applications');
   const [positionTab, setPositionTab] = useState<'volt' | 'project'>('volt');
-  const [editingPositionId, setEditingPositionId] = useState<number | null>(null);
+  const [editingPositionId, setEditingPositionId] = useState<string | null>(null);
   const [deadlineDate, setDeadlineDate] = useState<Date | undefined>(undefined);
   const [loading, setLoading] = useState(true);
   const [contactMessages, setContactMessages] = useState<ContactMessage[]>([]);
@@ -96,7 +95,6 @@ const AdminPage = () => {
     const loadData = async () => {
       setLoading(true);
       try {
-        // Load applications
         const fetchedApplications = await getApplications();
         
         if (fetchedApplications && fetchedApplications.length > 0) {
@@ -107,14 +105,12 @@ const AdminPage = () => {
           console.log('No stored applications found, using samples');
         }
 
-        // Load positions
         const fetchedPositions = await getPositions();
         if (fetchedPositions && fetchedPositions.length > 0) {
           setPositions(fetchedPositions);
           console.log('Loaded positions from API/localStorage:', fetchedPositions);
         }
         
-        // Load contact messages
         const fetchedMessages = await getContactMessages();
         if (fetchedMessages && fetchedMessages.length > 0) {
           setContactMessages(fetchedMessages);
@@ -252,14 +248,12 @@ const AdminPage = () => {
 
     try {
       if (editingPositionId !== null) {
-        // Update existing position
         await updatePosition(editingPositionId, {
           ...positionToSave,
           publishedDate: positions.find(p => p.id === editingPositionId)?.publishedDate || 
                         (newPosition.active ? new Date().toISOString().split('T')[0] : undefined)
         });
         
-        // Refresh positions
         const updatedPositions = await getPositions();
         setPositions(updatedPositions);
         
@@ -268,7 +262,6 @@ const AdminPage = () => {
           description: `${newPosition.title} has been updated successfully.`,
         });
       } else {
-        // Create new position
         const publishDate = new Date().toISOString().split('T')[0];
         await savePosition({
           ...positionToSave as Omit<PositionType, 'id'>,
@@ -276,7 +269,6 @@ const AdminPage = () => {
           publishedDate: publishDate
         });
         
-        // Refresh positions
         const updatedPositions = await getPositions();
         setPositions(updatedPositions);
         
@@ -286,7 +278,6 @@ const AdminPage = () => {
         });
       }
 
-      // Reset form
       setNewPosition({
         title: '',
         description: '',
@@ -317,7 +308,6 @@ const AdminPage = () => {
     try {
       await deletePosition(id);
       
-      // Refresh positions
       const updatedPositions = await getPositions();
       setPositions(updatedPositions);
       
@@ -362,7 +352,6 @@ const AdminPage = () => {
         publishedDate 
       });
       
-      // Refresh positions
       const updatedPositions = await getPositions();
       setPositions(updatedPositions);
     } catch (error) {
