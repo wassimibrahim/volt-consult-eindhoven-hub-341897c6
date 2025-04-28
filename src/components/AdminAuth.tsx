@@ -1,11 +1,12 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/components/ui/use-toast';
 import { LockKeyhole } from 'lucide-react';
-import { verifyAdminPassword } from '../services/mongoDBService';
+import { verifyAdminPassword, login, logout } from '../services/mongoDBService';
+import { supabase } from '@/integrations/supabase/client';
 
 interface AdminAuthProps {
   children: React.ReactNode;
@@ -13,52 +14,84 @@ interface AdminAuthProps {
 
 const AdminAuth = ({ children }: AdminAuthProps) => {
   const [password, setPassword] = useState('');
-  const [isAuthenticated, setIsAuthenticated] = useState(() => {
-    return localStorage.getItem('adminAuthenticated') === 'true';
-  });
+  const [email, setEmail] = useState('');
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  useEffect(() => {
+    // Check if user is already authenticated with Supabase
+    const checkAuth = async () => {
+      const { data } = await supabase.auth.getSession();
+      if (data.session) {
+        setIsAuthenticated(true);
+      }
+    };
+    
+    checkAuth();
+    
+    // Set up auth state change listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      setIsAuthenticated(!!session);
+    });
+    
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
+
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     
     try {
-      const isValid = await verifyAdminPassword(password);
-      
-      if (isValid) {
-        setIsAuthenticated(true);
-        localStorage.setItem('adminAuthenticated', 'true');
-        toast({
-          title: "Success",
-          description: "You have successfully logged in as admin.",
-        });
+      // For demo purposes only - in a real app you would use a proper auth flow
+      if (email && password) {
+        // Try to log in with Supabase
+        await login(email, password);
       } else {
-        toast({
-          title: "Access Denied",
-          description: "Incorrect password. Please try again.",
-          variant: "destructive",
-        });
-        setPassword('');
+        // Fallback to password-only auth
+        const isValid = await verifyAdminPassword(password);
+        
+        if (isValid) {
+          setIsAuthenticated(true);
+          localStorage.setItem('adminAuthenticated', 'true');
+        } else {
+          throw new Error('Invalid credentials');
+        }
       }
-    } catch (error) {
+      
       toast({
-        title: "Error",
-        description: "An error occurred during login. Please try again.",
+        title: "Success",
+        description: "You have successfully logged in as admin.",
+      });
+    } catch (error) {
+      console.error('Login error:', error);
+      toast({
+        title: "Access Denied",
+        description: "Incorrect email or password. Please try again.",
         variant: "destructive",
       });
+      setPassword('');
+      setEmail('');
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleLogout = () => {
-    setIsAuthenticated(false);
-    localStorage.removeItem('adminAuthenticated');
-    toast({
-      title: "Logged out",
-      description: "You have been logged out of the admin area.",
-    });
+  const handleLogout = async () => {
+    try {
+      await logout();
+      setIsAuthenticated(false);
+      localStorage.removeItem('adminAuthenticated');
+      
+      toast({
+        title: "Logged out",
+        description: "You have been logged out of the admin area.",
+      });
+    } catch (error) {
+      console.error('Error logging out:', error);
+    }
   };
 
   if (isAuthenticated) {
@@ -85,7 +118,21 @@ const AdminAuth = ({ children }: AdminAuthProps) => {
           
           <h1 className="text-2xl font-bold text-center mb-6">Admin Access</h1>
           
-          <form onSubmit={handleSubmit}>
+          <form onSubmit={handleLogin}>
+            <div className="mb-4">
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+                Email (Optional)
+              </label>
+              <Input
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full"
+                placeholder="Enter email (optional)"
+              />
+            </div>
+
             <div className="mb-4">
               <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
                 Enter Admin Password

@@ -5,6 +5,7 @@ import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from '@/components/ui/use-toast';
 import { saveApplication } from '../services/mongoDBService';
+import { supabase } from '@/integrations/supabase/client';
 
 interface ApplyFormProps {
   positionTitle: string;
@@ -45,14 +46,21 @@ const ApplyForm: React.FC<ApplyFormProps> = ({ positionTitle, applicationType })
     setFormData(prev => ({ ...prev, agreeToTerms: checked }));
   };
   
-  // Function to convert file to base64
-  const fileToBase64 = (file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = () => resolve(reader.result as string);
-      reader.onerror = error => reject(error);
-    });
+  const uploadFileToSupabase = async (file: File, filePath: string) => {
+    const { data, error } = await supabase.storage
+      .from('applications')
+      .upload(filePath, file, {
+        cacheControl: '3600',
+        upsert: false,
+      });
+    
+    if (error) throw error;
+    
+    const { data: publicUrl } = supabase.storage
+      .from('applications')
+      .getPublicUrl(filePath);
+    
+    return publicUrl.publicUrl;
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -60,28 +68,28 @@ const ApplyForm: React.FC<ApplyFormProps> = ({ positionTitle, applicationType })
     setSubmitting(true);
     
     try {
-      // Convert files to base64
-      const documentData: string[] = [];
+      // Upload files to Supabase Storage
+      let cvUrl = '';
+      let motivationLetterUrl = '';
       
       if (formData.cv) {
-        const cvBase64 = await fileToBase64(formData.cv);
-        documentData.push(cvBase64);
+        const filePath = `${formData.email}/${Date.now()}_CV_${formData.cv.name}`;
+        cvUrl = await uploadFileToSupabase(formData.cv, filePath);
       }
       
       if (formData.motivationLetter) {
-        const motivationLetterBase64 = await fileToBase64(formData.motivationLetter);
-        documentData.push(motivationLetterBase64);
+        const filePath = `${formData.email}/${Date.now()}_MotivationLetter_${formData.motivationLetter.name}`;
+        motivationLetterUrl = await uploadFileToSupabase(formData.motivationLetter, filePath);
       }
       
       // Create application object
       const newApplication = {
         fullName: `${formData.firstName} ${formData.familyName}`,
+        email: formData.email,
         position: positionTitle,
         type: applicationType,
-        date: new Date().toISOString().split('T')[0],
-        status: 'pending' as const,
         documents: ['CV', 'Motivation Letter'],
-        documentData: documentData,
+        documentData: [cvUrl, motivationLetterUrl].filter(Boolean),
         details: {
           firstName: formData.firstName,
           familyName: formData.familyName,

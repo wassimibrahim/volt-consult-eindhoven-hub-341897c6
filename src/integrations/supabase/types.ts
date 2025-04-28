@@ -9,7 +9,117 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      applications: {
+        Row: {
+          application_date: string | null
+          created_at: string | null
+          cv_url: string | null
+          details: Json | null
+          email: string
+          full_name: string
+          id: string
+          motivation_letter_url: string | null
+          position: string
+          position_type: string
+          status: string
+        }
+        Insert: {
+          application_date?: string | null
+          created_at?: string | null
+          cv_url?: string | null
+          details?: Json | null
+          email: string
+          full_name: string
+          id?: string
+          motivation_letter_url?: string | null
+          position: string
+          position_type: string
+          status: string
+        }
+        Update: {
+          application_date?: string | null
+          created_at?: string | null
+          cv_url?: string | null
+          details?: Json | null
+          email?: string
+          full_name?: string
+          id?: string
+          motivation_letter_url?: string | null
+          position?: string
+          position_type?: string
+          status?: string
+        }
+        Relationships: []
+      }
+      contact_messages: {
+        Row: {
+          created_at: string | null
+          email: string
+          id: string
+          message: string
+          name: string
+        }
+        Insert: {
+          created_at?: string | null
+          email: string
+          id?: string
+          message: string
+          name: string
+        }
+        Update: {
+          created_at?: string | null
+          email?: string
+          id?: string
+          message?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      positions: {
+        Row: {
+          active: boolean | null
+          company_name: string | null
+          created_at: string | null
+          deadline: string | null
+          description: string
+          id: string
+          preferred_majors: string[] | null
+          project_description: string | null
+          published_date: string | null
+          requirements: string[] | null
+          title: string
+          type: string
+        }
+        Insert: {
+          active?: boolean | null
+          company_name?: string | null
+          created_at?: string | null
+          deadline?: string | null
+          description: string
+          id?: string
+          preferred_majors?: string[] | null
+          project_description?: string | null
+          published_date?: string | null
+          requirements?: string[] | null
+          title: string
+          type: string
+        }
+        Update: {
+          active?: boolean | null
+          company_name?: string | null
+          created_at?: string | null
+          deadline?: string | null
+          description?: string
+          id?: string
+          preferred_majors?: string[] | null
+          project_description?: string | null
+          published_date?: string | null
+          requirements?: string[] | null
+          title?: string
+          type?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
