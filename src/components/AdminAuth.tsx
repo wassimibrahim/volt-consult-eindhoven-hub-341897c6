@@ -20,22 +20,24 @@ const AdminAuth = ({ children }: AdminAuthProps) => {
   const { toast } = useToast();
 
   useEffect(() => {
-    // Check if user is already authenticated with Supabase
+    // Check if user is already authenticated
     const checkAuth = async () => {
-      // Check local storage first
-      if (localStorage.getItem('adminAuthenticated') === 'true') {
-        setIsAuthenticated(true);
-        return;
-      }
-      
       try {
-        // Then check Supabase auth
+        // Check local storage first for quick access
+        if (localStorage.getItem('adminAuthenticated') === 'true') {
+          setIsAuthenticated(true);
+          return;
+        }
+        
+        // Then check Supabase auth session
         const { data } = await supabase.auth.getSession();
         if (data.session) {
           setIsAuthenticated(true);
+          localStorage.setItem('adminAuthenticated', 'true');
         }
       } catch (error) {
         console.error("Error checking auth:", error);
+        localStorage.removeItem('adminAuthenticated');
       }
     };
     
@@ -43,7 +45,14 @@ const AdminAuth = ({ children }: AdminAuthProps) => {
     
     // Set up auth state change listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      setIsAuthenticated(!!session);
+      const isAuth = !!session;
+      setIsAuthenticated(isAuth);
+      
+      if (isAuth) {
+        localStorage.setItem('adminAuthenticated', 'true');
+      } else if (event === 'SIGNED_OUT') {
+        localStorage.removeItem('adminAuthenticated');
+      }
     });
     
     return () => {
@@ -56,7 +65,7 @@ const AdminAuth = ({ children }: AdminAuthProps) => {
     setIsLoading(true);
     
     try {
-      // For demo purposes only - try password-only auth first
+      // For demo purposes - try password-only auth first
       const isValid = await verifyAdminPassword(password);
       
       if (isValid) {
@@ -66,9 +75,11 @@ const AdminAuth = ({ children }: AdminAuthProps) => {
           title: "Success",
           description: "You have successfully logged in as admin.",
         });
+        return; // Exit early on successful password-only auth
       } 
+      
       // Only try email/password login if both are provided and simple password check failed
-      else if (email && password) {
+      if (email && password) {
         try {
           // Try to log in with Supabase
           await login(email, password);
@@ -78,28 +89,29 @@ const AdminAuth = ({ children }: AdminAuthProps) => {
             title: "Success",
             description: "You have successfully logged in as admin.",
           });
-        } catch (error) {
-          console.error('Login error:', error);
-          throw new Error('Invalid credentials');
+        } catch (loginError: any) {
+          console.error('Login error:', loginError);
+          throw new Error(loginError.message || 'Invalid credentials');
         }
-      } else {
-        throw new Error('Invalid credentials');
+      } else if (!isValid) {
+        // If password-only auth failed and no email provided
+        throw new Error('Invalid password. Please try again or provide email credentials.');
       }
-    } catch (error) {
-      console.error('Login error:', error);
+    } catch (error: any) {
+      console.error('Authentication error:', error);
       toast({
         title: "Access Denied",
-        description: "Incorrect email or password. Please try again.",
+        description: error.message || "Incorrect email or password. Please try again.",
         variant: "destructive",
       });
       setPassword('');
-      setEmail('');
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleLogout = async () => {
+    setIsLoading(true);
     try {
       await logout();
       setIsAuthenticated(false);
@@ -111,6 +123,13 @@ const AdminAuth = ({ children }: AdminAuthProps) => {
       });
     } catch (error) {
       console.error('Error logging out:', error);
+      toast({
+        title: "Error",
+        description: "There was a problem logging you out. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -119,7 +138,9 @@ const AdminAuth = ({ children }: AdminAuthProps) => {
       <div>
         <div className="bg-gray-100 p-4 mb-6 rounded-lg flex justify-between items-center">
           <p className="font-medium">Admin Dashboard</p>
-          <Button variant="outline" onClick={handleLogout}>Logout</Button>
+          <Button variant="outline" onClick={handleLogout} disabled={isLoading}>
+            {isLoading ? 'Processing...' : 'Logout'}
+          </Button>
         </div>
         {children}
       </div>
@@ -150,6 +171,7 @@ const AdminAuth = ({ children }: AdminAuthProps) => {
                 onChange={(e) => setEmail(e.target.value)}
                 className="w-full"
                 placeholder="Enter email (optional)"
+                disabled={isLoading}
               />
             </div>
 
@@ -165,6 +187,7 @@ const AdminAuth = ({ children }: AdminAuthProps) => {
                 className="w-full"
                 placeholder="Enter password"
                 required
+                disabled={isLoading}
               />
               <p className="text-xs text-gray-500 mt-1">
                 For demo purposes, use password: <strong>admin123</strong>

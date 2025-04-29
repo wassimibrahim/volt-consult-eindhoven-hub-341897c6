@@ -23,7 +23,7 @@ export interface ApplicationType {
   fullName: string;
   email: string;
   position: string;
-  type: 'volt' | 'project';
+  type: 'volt' | 'project' | null;
   date: string;
   status: 'pending' | 'reviewed' | 'accepted' | 'rejected';
   documents: string[];
@@ -108,6 +108,7 @@ export const getPositions = async (): Promise<PositionType[]> => {
 
 export const savePosition = async (position: Omit<PositionType, 'id'>): Promise<PositionType> => {
   try {
+    // Create a single object with the correct property names for Supabase
     const insertData = {
       title: position.title,
       description: position.description,
@@ -295,16 +296,20 @@ export const saveApplication = async (application: {
         full_name: application.fullName,
         email: email,
         position: application.position,
-        position_type: application.type || 'volt',
+        position_type: application.type || 'volt', 
         status: 'pending',
         cv_url: cvUrl,
         motivation_letter_url: motivationLetterUrl,
-        details: application.details
+        details: application.details,
+        application_date: new Date().toISOString() // Explicitly set the date
       })
       .select()
       .single();
     
-    if (error) throw error;
+    if (error) {
+      console.error('Supabase insert error:', error);
+      throw error;
+    }
     
     // Transform the data to match the expected format
     return {
@@ -317,17 +322,8 @@ export const saveApplication = async (application: {
       status: data.status as 'pending' | 'reviewed' | 'accepted' | 'rejected',
       documents: ['CV', 'Motivation Letter'],
       documentData: [data.cv_url, data.motivation_letter_url].filter(Boolean),
-      details: data.details as {
-        firstName?: string;
-        familyName?: string;
-        birthDate: string;
-        degreeProgram?: string;
-        yearOfStudy?: string;
-        phoneNumber?: string;
-        email?: string;
-        linkedinProfile?: string;
-      } || {
-        birthDate: '',
+      details: data.details as ApplicationType['details'] || {
+        birthDate: new Date().toISOString().split('T')[0],
       }
     };
   } catch (error) {
@@ -383,12 +379,16 @@ export const saveContactMessage = async (message: { name: string; email: string;
       .insert({
         name: message.name,
         email: message.email,
-        message: message.message
+        message: message.message,
+        created_at: new Date().toISOString() // Explicitly set the date
       })
       .select()
       .single();
     
-    if (error) throw error;
+    if (error) {
+      console.error('Supabase insert error:', error);
+      throw error;
+    }
     
     // Transform the data to match the expected format
     return {
