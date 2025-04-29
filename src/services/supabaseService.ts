@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -155,71 +154,6 @@ export const savePosition = async (position: Omit<PositionType, 'id'>): Promise<
     };
   } catch (error) {
     console.error('Error saving position:', error);
-    throw error;
-  }
-};
-
-export const updatePosition = async (id: string, position: Partial<PositionType>): Promise<PositionType> => {
-  try {
-    const updateData: any = {};
-    
-    if (position.title) updateData.title = position.title;
-    if (position.description) updateData.description = position.description;
-    if (position.type) updateData.type = position.type;
-    if (position.requirements) updateData.requirements = position.requirements;
-    if (position.preferredMajors) updateData.preferred_majors = position.preferredMajors;
-    if (position.companyName) updateData.company_name = position.companyName;
-    if (position.projectDescription) updateData.project_description = position.projectDescription;
-    if (position.active !== undefined) updateData.active = position.active;
-    if (position.publishedDate) updateData.published_date = position.publishedDate;
-    if (position.deadline) updateData.deadline = position.deadline;
-    
-    const { data, error } = await supabase
-      .from('positions')
-      .update(updateData)
-      .eq('id', id)
-      .select()
-      .single();
-    
-    if (error) {
-      console.error('Error updating position in Supabase:', error);
-      throw error;
-    }
-    
-    // Transform the data to match the expected format
-    return {
-      id: data.id,
-      title: data.title,
-      description: data.description,
-      type: data.type as 'volt' | 'project',
-      requirements: data.requirements || [],
-      preferredMajors: data.preferred_majors || [],
-      companyName: data.company_name,
-      projectDescription: data.project_description,
-      active: data.active || false,
-      publishedDate: data.published_date ? new Date(data.published_date).toISOString().split('T')[0] : undefined,
-      deadline: data.deadline ? new Date(data.deadline).toISOString().split('T')[0] : undefined,
-      createdAt: data.created_at ? new Date(data.created_at).toISOString().split('T')[0] : undefined
-    };
-  } catch (error) {
-    console.error('Error updating position:', error);
-    throw error;
-  }
-};
-
-export const deletePosition = async (id: string): Promise<void> => {
-  try {
-    const { error } = await supabase
-      .from('positions')
-      .delete()
-      .eq('id', id);
-    
-    if (error) {
-      console.error('Error deleting position from Supabase:', error);
-      throw error;
-    }
-  } catch (error) {
-    console.error('Error deleting position:', error);
     throw error;
   }
 };

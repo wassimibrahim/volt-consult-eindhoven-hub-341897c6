@@ -6,7 +6,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { ChevronDown, ChevronRight, ChevronLeft, Clock } from 'lucide-react';
 import ApplyForm from '../components/ApplyForm';
 import { differenceInDays, differenceInHours, differenceInMinutes } from 'date-fns';
-import { getPositions, PositionType } from '../services/mongoDBService';
+import { getPositions, PositionType } from '../services/supabaseService';
 
 // Fallback positions if none are found in MongoDB or localStorage
 const fallbackVoltPositions: PositionType[] = [
@@ -32,24 +32,20 @@ const ApplyPage = () => {
   const [selectedType, setSelectedType] = useState<'volt' | 'project' | null>(null);
   const [selectedPosition, setSelectedPosition] = useState<PositionType | null>(null);
   const [positions, setPositions] = useState<PositionType[]>([]);
-  const [countdowns, setCountdowns] = useState<Record<number, { text: string, isNearDeadline: boolean } | null>>({});
+  const [countdowns, setCountdowns] = useState<Record<string, { text: string, isNearDeadline: boolean } | null>>({});
   const [loading, setLoading] = useState(true);
   
-  // Load positions from MongoDB via our service
+  // Load positions from Supabase
   useEffect(() => {
     const loadPositions = async () => {
       setLoading(true);
       try {
         const fetchedPositions = await getPositions();
-        if (fetchedPositions && fetchedPositions.length > 0) {
-          setPositions(fetchedPositions);
-        } else {
-          // Use fallback positions if none found
-          setPositions(fallbackVoltPositions);
-        }
+        setPositions(fetchedPositions || []);
+        console.log('Loaded positions:', fetchedPositions);
       } catch (error) {
         console.error('Error loading positions:', error);
-        setPositions(fallbackVoltPositions);
+        setPositions([]);
       } finally {
         setLoading(false);
       }
@@ -73,7 +69,7 @@ const ApplyPage = () => {
   }, [positions]);
 
   const updateCountdowns = () => {
-    const newCountdowns: Record<number, { text: string, isNearDeadline: boolean } | null> = {};
+    const newCountdowns: Record<string, { text: string, isNearDeadline: boolean } | null> = {};
     
     positions.forEach(position => {
       if (position.deadline && position.publishedDate) {

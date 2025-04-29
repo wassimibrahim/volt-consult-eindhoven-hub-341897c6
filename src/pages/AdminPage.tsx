@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
@@ -26,42 +25,7 @@ import {
   ApplicationType,
   PositionType,
   ContactMessage
-} from '../services/mongoDBService';
-
-const sampleApplications: ApplicationType[] = [
-  {
-    id: '1',
-    fullName: 'John Smith',
-    email: 'john.smith@example.com',
-    position: 'Technology Consultant',
-    type: 'volt',
-    date: '2025-04-10',
-    status: 'pending',
-    documents: ['CV', 'Motivation Letter'],
-    details: {
-      birthDate: '1999-05-15',
-      degreeProgram: 'Master - Computer Science',
-      yearOfStudy: '2nd Year',
-      linkedinProfile: 'https://linkedin.com/in/johnsmith',
-    }
-  },
-  {
-    id: '2',
-    fullName: 'Emma Johnson',
-    email: 'emma.johnson@example.com',
-    position: 'Data Analyst',
-    type: 'volt',
-    date: '2025-04-09',
-    status: 'reviewed',
-    documents: ['CV', 'Motivation Letter'],
-    details: {
-      birthDate: '2000-08-22',
-      degreeProgram: 'Bachelor - Data Science',
-      yearOfStudy: '3rd Year',
-      linkedinProfile: 'https://linkedin.com/in/emmajohnson',
-    }
-  }
-];
+} from '../services/supabaseService';
 
 const statusColors: Record<string, string> = {
   pending: 'bg-yellow-100 text-yellow-800',
@@ -99,29 +63,18 @@ const AdminPage = () => {
       setLoading(true);
       try {
         const fetchedApplications = await getApplications();
-        
-        if (fetchedApplications && fetchedApplications.length > 0) {
-          setApplications(fetchedApplications);
-          console.log('Loaded applications from API/localStorage:', fetchedApplications);
-        } else {
-          setApplications(sampleApplications);
-          console.log('No stored applications found, using samples');
-        }
+        setApplications(fetchedApplications || []);
+        console.log('Loaded applications:', fetchedApplications);
 
         const fetchedPositions = await getPositions();
-        if (fetchedPositions && fetchedPositions.length > 0) {
-          setPositions(fetchedPositions);
-          console.log('Loaded positions from API/localStorage:', fetchedPositions);
-        }
+        setPositions(fetchedPositions || []);
+        console.log('Loaded positions:', fetchedPositions);
         
         const fetchedMessages = await getContactMessages();
-        if (fetchedMessages && fetchedMessages.length > 0) {
-          setContactMessages(fetchedMessages);
-          console.log('Loaded contact messages from API/localStorage:', fetchedMessages);
-        }
+        setContactMessages(fetchedMessages || []);
+        console.log('Loaded contact messages:', fetchedMessages);
       } catch (error) {
         console.error('Error loading data:', error);
-        setApplications(sampleApplications);
       } finally {
         setLoading(false);
       }
