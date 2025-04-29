@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/components/ui/use-toast';
 import { LockKeyhole } from 'lucide-react';
-import { verifyAdminPassword, login, logout } from '../services/supabaseService';
+import { login, logout } from '../services/supabaseService';
 import { supabase } from '@/integrations/supabase/client';
 
 interface AdminAuthProps {
@@ -13,11 +13,15 @@ interface AdminAuthProps {
 }
 
 const AdminAuth = ({ children }: AdminAuthProps) => {
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [email, setEmail] = useState('');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+
+  // Required admin credentials
+  const ADMIN_USERNAME = 'W';
+  const ADMIN_PASSWORD = 'VCGEindhovenLebanon10452*';
 
   useEffect(() => {
     // Check if user is already authenticated
@@ -65,24 +69,22 @@ const AdminAuth = ({ children }: AdminAuthProps) => {
     setIsLoading(true);
     
     try {
-      // For demo purposes - try password-only auth first
-      const isValid = await verifyAdminPassword(password);
-      
-      if (isValid) {
+      // Check against required admin credentials
+      if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
         setIsAuthenticated(true);
         localStorage.setItem('adminAuthenticated', 'true');
         toast({
           title: "Success",
           description: "You have successfully logged in as admin.",
         });
-        return; // Exit early on successful password-only auth
-      } 
+        return;
+      }
       
-      // Only try email/password login if both are provided and simple password check failed
-      if (email && password) {
+      // If credentials don't match, try Supabase auth (if email is provided)
+      if (username.includes('@')) {
         try {
           // Try to log in with Supabase
-          await login(email, password);
+          await login(username, password);
           setIsAuthenticated(true);
           localStorage.setItem('adminAuthenticated', 'true');
           toast({
@@ -93,15 +95,15 @@ const AdminAuth = ({ children }: AdminAuthProps) => {
           console.error('Login error:', loginError);
           throw new Error(loginError.message || 'Invalid credentials');
         }
-      } else if (!isValid) {
-        // If password-only auth failed and no email provided
-        throw new Error('Invalid password. Please try again or provide email credentials.');
+      } else {
+        // If username doesn't contain @ and doesn't match admin credentials
+        throw new Error('Invalid username or password. Please try again.');
       }
     } catch (error: any) {
       console.error('Authentication error:', error);
       toast({
         title: "Access Denied",
-        description: error.message || "Incorrect email or password. Please try again.",
+        description: error.message || "Incorrect username or password. Please try again.",
         variant: "destructive",
       });
       setPassword('');
@@ -161,23 +163,24 @@ const AdminAuth = ({ children }: AdminAuthProps) => {
           
           <form onSubmit={handleLogin}>
             <div className="mb-4">
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-                Email (Optional)
+              <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-1">
+                Username
               </label>
               <Input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                id="username"
+                type="text"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
                 className="w-full"
-                placeholder="Enter email (optional)"
+                placeholder="Enter username"
+                required
                 disabled={isLoading}
               />
             </div>
 
             <div className="mb-4">
               <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
-                Enter Admin Password
+                Password
               </label>
               <Input
                 id="password"
@@ -189,9 +192,6 @@ const AdminAuth = ({ children }: AdminAuthProps) => {
                 required
                 disabled={isLoading}
               />
-              <p className="text-xs text-gray-500 mt-1">
-                For demo purposes, use password: <strong>admin123</strong>
-              </p>
             </div>
             
             <Button type="submit" className="w-full" disabled={isLoading}>

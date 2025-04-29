@@ -1,9 +1,10 @@
+
 import React, { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { toast } from '@/components/ui/use-toast';
-import { saveContactMessage } from '../services/mongoDBService';
+import { saveContactMessage } from '../services/supabaseService';
 
 const ContactForm = () => {
   const [formData, setFormData] = useState({
@@ -37,6 +38,7 @@ const ContactForm = () => {
         message: '',
       });
     } catch (error) {
+      console.error('Error sending message:', error);
       toast({
         title: "Error",
         description: "Failed to send message. Please try again.",

@@ -69,11 +69,9 @@ export const isAuthenticated = async () => {
   return !!data.session;
 };
 
+// This function is kept for backwards compatibility but not used directly anymore
 export const verifyAdminPassword = async (password: string) => {
-  // For demo purposes, use a hardcoded admin password
-  // In production, you should use proper authentication
-  const adminPassword = 'admin123';
-  return password === adminPassword;
+  return password === 'VCGEindhovenLebanon10452*';
 };
 
 // Positions
@@ -83,7 +81,10 @@ export const getPositions = async (): Promise<PositionType[]> => {
       .from('positions')
       .select('*');
     
-    if (error) throw error;
+    if (error) {
+      console.error('Supabase error fetching positions:', error);
+      throw error;
+    }
     
     // Transform the data to match the expected format
     return (data || []).map(item => ({
@@ -118,9 +119,11 @@ export const savePosition = async (position: Omit<PositionType, 'id'>): Promise<
       company_name: position.companyName,
       project_description: position.projectDescription,
       active: position.active,
-      published_date: position.publishedDate ? position.publishedDate : new Date().toISOString(),
-      deadline: position.deadline ? position.deadline : null
+      published_date: position.publishedDate || new Date().toISOString(),
+      deadline: position.deadline || null
     };
+    
+    console.log('Saving position with data:', insertData);
 
     const { data, error } = await supabase
       .from('positions')
@@ -128,7 +131,12 @@ export const savePosition = async (position: Omit<PositionType, 'id'>): Promise<
       .select()
       .single();
     
-    if (error) throw error;
+    if (error) {
+      console.error('Error saving position to Supabase:', error);
+      throw error;
+    }
+    
+    console.log('Successfully saved position:', data);
     
     // Transform the data to match the expected format
     return {
@@ -173,7 +181,10 @@ export const updatePosition = async (id: string, position: Partial<PositionType>
       .select()
       .single();
     
-    if (error) throw error;
+    if (error) {
+      console.error('Error updating position in Supabase:', error);
+      throw error;
+    }
     
     // Transform the data to match the expected format
     return {
@@ -203,7 +214,10 @@ export const deletePosition = async (id: string): Promise<void> => {
       .delete()
       .eq('id', id);
     
-    if (error) throw error;
+    if (error) {
+      console.error('Error deleting position from Supabase:', error);
+      throw error;
+    }
   } catch (error) {
     console.error('Error deleting position:', error);
     throw error;
@@ -217,7 +231,10 @@ export const getApplications = async (): Promise<ApplicationType[]> => {
       .from('applications')
       .select('*');
     
-    if (error) throw error;
+    if (error) {
+      console.error('Supabase error fetching applications:', error);
+      throw error;
+    }
     
     // Transform the data to match the expected format
     return (data || []).map(item => {
@@ -290,19 +307,24 @@ export const saveApplication = async (application: {
     const cvUrl = application.documentData?.[0] || null;
     const motivationLetterUrl = application.documentData?.[1] || null;
     
+    // Create the application data object
+    const applicationData = {
+      full_name: application.fullName,
+      email: email,
+      position: application.position,
+      position_type: application.type || 'volt',
+      status: 'pending',
+      cv_url: cvUrl,
+      motivation_letter_url: motivationLetterUrl,
+      details: application.details,
+      application_date: new Date().toISOString() // Explicitly set the date
+    };
+    
+    console.log('Saving application with data:', applicationData);
+
     const { data, error } = await supabase
       .from('applications')
-      .insert({
-        full_name: application.fullName,
-        email: email,
-        position: application.position,
-        position_type: application.type || 'volt', 
-        status: 'pending',
-        cv_url: cvUrl,
-        motivation_letter_url: motivationLetterUrl,
-        details: application.details,
-        application_date: new Date().toISOString() // Explicitly set the date
-      })
+      .insert(applicationData)
       .select()
       .single();
     
@@ -310,6 +332,8 @@ export const saveApplication = async (application: {
       console.error('Supabase insert error:', error);
       throw error;
     }
+    
+    console.log('Successfully saved application:', data);
     
     // Transform the data to match the expected format
     return {
@@ -339,7 +363,10 @@ export const updateApplicationStatus = async (id: string, status: 'pending' | 'r
       .update({ status })
       .eq('id', id);
     
-    if (error) throw error;
+    if (error) {
+      console.error('Error updating application status in Supabase:', error);
+      throw error;
+    }
     
     // Return updated list of applications
     return getApplications();
@@ -356,7 +383,10 @@ export const getContactMessages = async (): Promise<ContactMessage[]> => {
       .from('contact_messages')
       .select('*');
     
-    if (error) throw error;
+    if (error) {
+      console.error('Supabase error fetching contact messages:', error);
+      throw error;
+    }
     
     // Transform the data to match the expected format
     return (data || []).map(item => ({
@@ -374,14 +404,18 @@ export const getContactMessages = async (): Promise<ContactMessage[]> => {
 
 export const saveContactMessage = async (message: { name: string; email: string; message: string }): Promise<ContactMessage> => {
   try {
+    const messageData = {
+      name: message.name,
+      email: message.email,
+      message: message.message,
+      created_at: new Date().toISOString() // Explicitly set the date
+    };
+    
+    console.log('Saving contact message with data:', messageData);
+
     const { data, error } = await supabase
       .from('contact_messages')
-      .insert({
-        name: message.name,
-        email: message.email,
-        message: message.message,
-        created_at: new Date().toISOString() // Explicitly set the date
-      })
+      .insert(messageData)
       .select()
       .single();
     
@@ -389,6 +423,8 @@ export const saveContactMessage = async (message: { name: string; email: string;
       console.error('Supabase insert error:', error);
       throw error;
     }
+    
+    console.log('Successfully saved contact message:', data);
     
     // Transform the data to match the expected format
     return {

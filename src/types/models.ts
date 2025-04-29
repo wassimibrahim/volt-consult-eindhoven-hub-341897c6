@@ -20,8 +20,19 @@ export interface Application {
   fullName: string;
   email: string;
   position: string;
+  type: 'volt' | 'project' | null;
   status: 'pending' | 'reviewed' | 'accepted' | 'rejected';
-  cv: string;
-  motivationLetter: string;
+  documents: string[];
+  documentData?: string[];
   date: string;
+  details: {
+    firstName?: string;
+    familyName?: string;
+    birthDate: string;
+    degreeProgram?: string;
+    yearOfStudy?: string;
+    phoneNumber?: string;
+    email?: string;
+    linkedinProfile?: string;
+  };
 }
