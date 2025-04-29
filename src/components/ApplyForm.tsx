@@ -1,10 +1,11 @@
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from '@/components/ui/use-toast';
-import { saveApplication } from '../services/mongoDBService';
+import { saveApplication } from '../services/supabaseService';
 import { supabase } from '@/integrations/supabase/client';
 
 interface ApplyFormProps {
@@ -47,20 +48,25 @@ const ApplyForm: React.FC<ApplyFormProps> = ({ positionTitle, applicationType })
   };
   
   const uploadFileToSupabase = async (file: File, filePath: string) => {
-    const { data, error } = await supabase.storage
-      .from('applications')
-      .upload(filePath, file, {
-        cacheControl: '3600',
-        upsert: false,
-      });
-    
-    if (error) throw error;
-    
-    const { data: publicUrl } = supabase.storage
-      .from('applications')
-      .getPublicUrl(filePath);
-    
-    return publicUrl.publicUrl;
+    try {
+      const { data, error } = await supabase.storage
+        .from('applications')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: false,
+        });
+      
+      if (error) throw error;
+      
+      const { data: publicUrl } = supabase.storage
+        .from('applications')
+        .getPublicUrl(filePath);
+      
+      return publicUrl.publicUrl;
+    } catch (error) {
+      console.error('Error uploading file:', error);
+      throw error;
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -68,6 +74,22 @@ const ApplyForm: React.FC<ApplyFormProps> = ({ positionTitle, applicationType })
     setSubmitting(true);
     
     try {
+      // Check if storage bucket exists, if not create it
+      const { data: buckets } = await supabase.storage.listBuckets();
+      const applicationsBucketExists = buckets?.some(bucket => bucket.name === 'applications');
+      
+      if (!applicationsBucketExists) {
+        const { error } = await supabase.storage.createBucket('applications', {
+          public: true,
+          fileSizeLimit: 5242880, // 5MB in bytes
+        });
+        
+        if (error) {
+          console.error('Error creating storage bucket:', error);
+          throw error;
+        }
+      }
+      
       // Upload files to Supabase Storage
       let cvUrl = '';
       let motivationLetterUrl = '';
@@ -105,7 +127,8 @@ const ApplyForm: React.FC<ApplyFormProps> = ({ positionTitle, applicationType })
       };
       
       // Save application using service
-      await saveApplication(newApplication);
+      const savedApplication = await saveApplication(newApplication);
+      console.log('Successfully saved application:', savedApplication);
       
       // Show success message
       toast({
