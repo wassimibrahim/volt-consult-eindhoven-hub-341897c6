@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -154,6 +155,82 @@ export const savePosition = async (position: Omit<PositionType, 'id'>): Promise<
     };
   } catch (error) {
     console.error('Error saving position:', error);
+    throw error;
+  }
+};
+
+// Implementing the missing updatePosition function
+export const updatePosition = async (id: string, position: Partial<PositionType>): Promise<PositionType> => {
+  try {
+    // Transform the data to match Supabase column names
+    const updateData: any = {};
+    
+    if (position.title !== undefined) updateData.title = position.title;
+    if (position.description !== undefined) updateData.description = position.description;
+    if (position.type !== undefined) updateData.type = position.type;
+    if (position.requirements !== undefined) updateData.requirements = position.requirements;
+    if (position.preferredMajors !== undefined) updateData.preferred_majors = position.preferredMajors;
+    if (position.companyName !== undefined) updateData.company_name = position.companyName;
+    if (position.projectDescription !== undefined) updateData.project_description = position.projectDescription;
+    if (position.active !== undefined) updateData.active = position.active;
+    if (position.publishedDate !== undefined) updateData.published_date = position.publishedDate;
+    if (position.deadline !== undefined) updateData.deadline = position.deadline;
+    
+    console.log(`Updating position ${id} with data:`, updateData);
+
+    const { data, error } = await supabase
+      .from('positions')
+      .update(updateData)
+      .eq('id', id)
+      .select()
+      .single();
+    
+    if (error) {
+      console.error('Error updating position in Supabase:', error);
+      throw error;
+    }
+    
+    console.log('Successfully updated position:', data);
+    
+    // Transform the data to match the expected format
+    return {
+      id: data.id,
+      title: data.title,
+      description: data.description,
+      type: data.type as 'volt' | 'project',
+      requirements: data.requirements || [],
+      preferredMajors: data.preferred_majors || [],
+      companyName: data.company_name,
+      projectDescription: data.project_description,
+      active: data.active || false,
+      publishedDate: data.published_date ? new Date(data.published_date).toISOString().split('T')[0] : undefined,
+      deadline: data.deadline ? new Date(data.deadline).toISOString().split('T')[0] : undefined,
+      createdAt: data.created_at ? new Date(data.created_at).toISOString().split('T')[0] : undefined
+    };
+  } catch (error) {
+    console.error('Error updating position:', error);
+    throw error;
+  }
+};
+
+// Implementing the missing deletePosition function
+export const deletePosition = async (id: string): Promise<void> => {
+  try {
+    console.log(`Deleting position with id: ${id}`);
+    
+    const { error } = await supabase
+      .from('positions')
+      .delete()
+      .eq('id', id);
+    
+    if (error) {
+      console.error('Error deleting position from Supabase:', error);
+      throw error;
+    }
+    
+    console.log('Successfully deleted position');
+  } catch (error) {
+    console.error('Error deleting position:', error);
     throw error;
   }
 };
