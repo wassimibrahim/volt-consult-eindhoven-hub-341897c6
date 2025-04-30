@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -238,6 +237,7 @@ export const deletePosition = async (id: string): Promise<void> => {
 // Applications
 export const getApplications = async (): Promise<ApplicationType[]> => {
   try {
+    console.log('Fetching applications from Supabase');
     const { data, error } = await supabase
       .from('applications')
       .select('*');
@@ -246,6 +246,8 @@ export const getApplications = async (): Promise<ApplicationType[]> => {
       console.error('Supabase error fetching applications:', error);
       throw error;
     }
+    
+    console.log('Applications fetched successfully:', data);
     
     // Transform the data to match the expected format
     return (data || []).map(item => {
@@ -308,15 +310,23 @@ export const saveApplication = async (application: {
   };
 }): Promise<ApplicationType> => {
   try {
+    console.log('Starting to save application:', application);
+    
     // Ensure we have the email from either the main object or the details
     const email = application.email || application.details.email;
     if (!email) {
+      console.error('Email is missing in the application data');
       throw new Error('Email is required');
     }
 
     // Extract CV and motivation letter from documentData if provided
     const cvUrl = application.documentData?.[0] || null;
     const motivationLetterUrl = application.documentData?.[1] || null;
+    
+    if (!cvUrl || !motivationLetterUrl) {
+      console.error('Missing document URLs:', { cvUrl, motivationLetterUrl });
+      throw new Error('Document URLs are required');
+    }
     
     // Create the application data object
     const applicationData = {

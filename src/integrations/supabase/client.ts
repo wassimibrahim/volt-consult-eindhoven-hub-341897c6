@@ -20,15 +20,37 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
 // Initialize the applications storage bucket on client load
 (async () => {
   try {
-    const { data: buckets } = await supabase.storage.listBuckets();
+    // First check if bucket exists
+    const { data: buckets, error } = await supabase.storage.listBuckets();
+    
+    if (error) {
+      console.error('Error listing buckets:', error);
+      return;
+    }
+    
     const applicationsBucketExists = buckets?.some(bucket => bucket.name === 'applications');
     
     if (!applicationsBucketExists) {
-      await supabase.storage.createBucket('applications', {
+      // Create the bucket with public access
+      const { error: createError } = await supabase.storage.createBucket('applications', {
         public: true,
         fileSizeLimit: 5242880, // 5MB in bytes
       });
+      
+      if (createError) {
+        console.error('Error creating applications bucket:', createError);
+        return;
+      }
+      
       console.log('Created applications storage bucket');
+      
+      // Set public policy for the bucket to allow uploads without authentication
+      const { error: policyError } = await supabase.storage.from('applications').createSignedUploadUrl('test-policy-file');
+      if (policyError) {
+        console.error('Error setting bucket policy:', policyError);
+      } else {
+        console.log('Successfully set public access policy for applications bucket');
+      }
     }
   } catch (error) {
     console.error('Error initializing storage bucket:', error);
