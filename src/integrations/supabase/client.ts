@@ -34,7 +34,8 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
       // Create the bucket with public access
       const { error: createError } = await supabase.storage.createBucket('applications', {
         public: true,
-        fileSizeLimit: 5242880, // 5MB in bytes
+        fileSizeLimit: 10485760, // 10MB in bytes to ensure files can be uploaded
+        allowedMimeTypes: ['application/pdf'] // Only allow PDF files
       });
       
       if (createError) {
@@ -44,12 +45,24 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
       
       console.log('Created applications storage bucket');
       
-      // Set public policy for the bucket to allow uploads without authentication
-      const { error: policyError } = await supabase.storage.from('applications').createSignedUploadUrl('test-policy-file');
-      if (policyError) {
-        console.error('Error setting bucket policy:', policyError);
-      } else {
-        console.log('Successfully set public access policy for applications bucket');
+      // Set bucket to public for easier access to files
+      const { error: updateError } = await supabase.storage.updateBucket('applications', {
+        public: true
+      });
+      
+      if (updateError) {
+        console.error('Error setting bucket to public:', updateError);
+      }
+    } else {
+      console.log('Applications bucket already exists');
+      
+      // Make sure bucket is public
+      const { error: updateError } = await supabase.storage.updateBucket('applications', {
+        public: true
+      });
+      
+      if (updateError) {
+        console.error('Error updating bucket settings:', updateError);
       }
     }
   } catch (error) {

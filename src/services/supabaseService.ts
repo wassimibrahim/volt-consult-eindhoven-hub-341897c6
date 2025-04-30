@@ -287,7 +287,7 @@ export const getApplications = async (): Promise<ApplicationType[]> => {
     });
   } catch (error) {
     console.error('Error fetching applications:', error);
-    return [];
+    throw error;
   }
 };
 
@@ -312,6 +312,7 @@ export const saveApplication = async (application: {
   try {
     console.log('Starting to save application:', application);
     
+    // Validation checks
     // Ensure we have the email from either the main object or the details
     const email = application.email || application.details.email;
     if (!email) {
@@ -351,7 +352,11 @@ export const saveApplication = async (application: {
     
     if (error) {
       console.error('Supabase insert error:', error);
-      throw error;
+      throw new Error(`Failed to save application: ${error.message}`);
+    }
+    
+    if (!data) {
+      throw new Error('No data returned after insert');
     }
     
     console.log('Successfully saved application:', data);
@@ -371,9 +376,9 @@ export const saveApplication = async (application: {
         birthDate: new Date().toISOString().split('T')[0],
       }
     };
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error saving application:', error);
-    throw error;
+    throw error; // Important to propagate the error
   }
 };
 

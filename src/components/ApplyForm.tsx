@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Input } from '@/components/ui/input';
@@ -6,6 +7,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from '@/components/ui/use-toast';
 import { saveApplication } from '../services/supabaseService';
 import { supabase } from '@/integrations/supabase/client';
+import { AlertCircle } from 'lucide-react';
 
 interface ApplyFormProps {
   positionTitle: string;
@@ -30,6 +32,7 @@ const ApplyForm: React.FC<ApplyFormProps> = ({ positionTitle, applicationType })
   });
   const [submitting, setSubmitting] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [fileError, setFileError] = useState<string | null>(null);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -37,9 +40,26 @@ const ApplyForm: React.FC<ApplyFormProps> = ({ positionTitle, applicationType })
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFileError(null);
     if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
       const { name } = e.target;
-      setFormData(prev => ({ ...prev, [name]: e.target.files?.[0] || null }));
+      
+      // Check file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        setFileError(`${name === 'cv' ? 'CV' : 'Motivation Letter'} file size exceeds 5MB limit`);
+        e.target.value = ''; // Clear the input
+        return;
+      }
+      
+      // Check file type (only PDF)
+      if (file.type !== 'application/pdf') {
+        setFileError(`${name === 'cv' ? 'CV' : 'Motivation Letter'} must be a PDF file`);
+        e.target.value = ''; // Clear the input
+        return;
+      }
+      
+      setFormData(prev => ({ ...prev, [name]: file }));
     }
   };
 
@@ -47,7 +67,7 @@ const ApplyForm: React.FC<ApplyFormProps> = ({ positionTitle, applicationType })
     setFormData(prev => ({ ...prev, agreeToTerms: checked }));
   };
   
-  const uploadFileToSupabase = async (file: File, filePath: string) => {
+  const uploadFileToSupabase = async (file: File, filePath: string): Promise<string> => {
     try {
       console.log(`Attempting to upload file: ${file.name} to path: ${filePath}`);
       
@@ -56,23 +76,27 @@ const ApplyForm: React.FC<ApplyFormProps> = ({ positionTitle, applicationType })
         .from('applications')
         .upload(filePath, file, {
           cacheControl: '3600',
-          upsert: true, // Changed to true to overwrite if file exists
+          upsert: true
         });
       
       if (error) {
         console.error('Error during upload:', error);
-        throw error;
+        throw new Error(`File upload failed: ${error.message}`);
       }
       
       console.log('Upload successful, getting public URL');
       
       // Get the public URL for the uploaded file
-      const { data: publicUrl } = supabase.storage
+      const { data: publicUrlData } = supabase.storage
         .from('applications')
         .getPublicUrl(filePath);
       
-      console.log('Public URL obtained:', publicUrl.publicUrl);
-      return publicUrl.publicUrl;
+      if (!publicUrlData || !publicUrlData.publicUrl) {
+        throw new Error('Failed to get public URL for uploaded file');
+      }
+      
+      console.log('Public URL obtained:', publicUrlData.publicUrl);
+      return publicUrlData.publicUrl;
     } catch (error) {
       console.error('Error in uploadFileToSupabase:', error);
       throw error;
@@ -83,43 +107,31 @@ const ApplyForm: React.FC<ApplyFormProps> = ({ positionTitle, applicationType })
     e.preventDefault();
     setSubmitting(true);
     setUploadProgress(10);
+    setFileError(null);
     
     try {
-      console.log('Starting application submission process');
+      // Check if files are provided
+      if (!formData.cv || !formData.motivationLetter) {
+        throw new Error('Both CV and Motivation Letter files are required');
+      }
       
-      // Ensure applications bucket exists
-      await ensureApplicationsBucketExists();
       setUploadProgress(20);
       
       // Upload files to Supabase Storage
-      let cvUrl = '';
-      let motivationLetterUrl = '';
+      const timestamp = Date.now();
+      const safeEmail = formData.email.replace(/[^a-zA-Z0-9]/g, '_');
       
-      if (formData.cv) {
-        const timestamp = Date.now();
-        const safeEmail = formData.email.replace(/[^a-zA-Z0-9]/g, '_');
-        const filePath = `${safeEmail}/${timestamp}_CV_${formData.cv.name.replace(/[^a-zA-Z0-9._]/g, '_')}`;
-        
-        console.log('Uploading CV:', filePath);
-        cvUrl = await uploadFileToSupabase(formData.cv, filePath);
-        setUploadProgress(50);
-      } else {
-        console.error('CV file is missing');
-        throw new Error('CV file is required');
-      }
+      // Upload CV
+      const cvFilePath = `${safeEmail}/${timestamp}_CV_${formData.cv.name.replace(/[^a-zA-Z0-9._]/g, '_')}`;
+      console.log('Uploading CV:', cvFilePath);
+      const cvUrl = await uploadFileToSupabase(formData.cv, cvFilePath);
+      setUploadProgress(50);
       
-      if (formData.motivationLetter) {
-        const timestamp = Date.now();
-        const safeEmail = formData.email.replace(/[^a-zA-Z0-9]/g, '_');
-        const filePath = `${safeEmail}/${timestamp}_MotivationLetter_${formData.motivationLetter.name.replace(/[^a-zA-Z0-9._]/g, '_')}`;
-        
-        console.log('Uploading Motivation Letter:', filePath);
-        motivationLetterUrl = await uploadFileToSupabase(formData.motivationLetter, filePath);
-        setUploadProgress(75);
-      } else {
-        console.error('Motivation Letter file is missing');
-        throw new Error('Motivation Letter file is required');
-      }
+      // Upload Motivation Letter
+      const motivationLetterFilePath = `${safeEmail}/${timestamp}_MotivationLetter_${formData.motivationLetter.name.replace(/[^a-zA-Z0-9._]/g, '_')}`;
+      console.log('Uploading Motivation Letter:', motivationLetterFilePath);
+      const motivationLetterUrl = await uploadFileToSupabase(formData.motivationLetter, motivationLetterFilePath);
+      setUploadProgress(75);
       
       console.log('Files uploaded successfully, saving application data');
       
@@ -162,51 +174,21 @@ const ApplyForm: React.FC<ApplyFormProps> = ({ positionTitle, applicationType })
       });
       
       // Redirect to home page
-      navigate('/');
-    } catch (error) {
+      setTimeout(() => navigate('/'), 2000);
+    } catch (error: any) {
       console.error('Error submitting application:', error);
+      
+      // Show appropriate error message
       toast({
         title: "Error",
-        description: "There was an error submitting your application. Please try again.",
+        description: error.message || "There was an error submitting your application. Please try again.",
         variant: "destructive",
       });
+      
+      setFileError(error.message || "File upload failed");
     } finally {
       setSubmitting(false);
-      setUploadProgress(0);
-    }
-  };
-  
-  const ensureApplicationsBucketExists = async () => {
-    try {
-      console.log('Checking for applications bucket');
-      const { data: buckets, error } = await supabase.storage.listBuckets();
-      
-      if (error) {
-        console.error('Error listing buckets:', error);
-        throw error;
-      }
-      
-      const applicationsBucketExists = buckets?.some(bucket => bucket.name === 'applications');
-      
-      if (!applicationsBucketExists) {
-        console.log('Creating applications bucket');
-        const { error: createError } = await supabase.storage.createBucket('applications', {
-          public: true,
-          fileSizeLimit: 5242880, // 5MB in bytes
-        });
-        
-        if (createError) {
-          console.error('Error creating storage bucket:', createError);
-          throw createError;
-        }
-        
-        console.log('Applications bucket created successfully');
-      } else {
-        console.log('Applications bucket already exists');
-      }
-    } catch (error) {
-      console.error('Error ensuring applications bucket exists:', error);
-      throw error;
+      setTimeout(() => setUploadProgress(0), 1000);
     }
   };
 
@@ -236,6 +218,13 @@ const ApplyForm: React.FC<ApplyFormProps> = ({ positionTitle, applicationType })
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6 bg-white p-8 rounded-xl shadow-md border border-gray-100">
+      {fileError && (
+        <div className="bg-red-50 border border-red-200 rounded-md p-4 flex items-start gap-3">
+          <AlertCircle className="w-5 h-5 text-red-500 mt-0.5 flex-shrink-0" />
+          <p className="text-red-700 text-sm">{fileError}</p>
+        </div>
+      )}
+      
       {uploadProgress > 0 && uploadProgress < 100 && (
         <div className="mb-4">
           <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
@@ -252,6 +241,7 @@ const ApplyForm: React.FC<ApplyFormProps> = ({ positionTitle, applicationType })
       
       <h3 className="text-xl font-semibold mb-6">Personal Information</h3>
       
+      {/* Personal Information Fields */}
       <div className="space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
