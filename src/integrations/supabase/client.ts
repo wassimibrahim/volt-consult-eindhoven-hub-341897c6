@@ -34,35 +34,38 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
       // Create the bucket with public access
       const { error: createError } = await supabase.storage.createBucket('applications', {
         public: true,
-        fileSizeLimit: 10485760, // 10MB in bytes to ensure files can be uploaded
+        fileSizeLimit: 10485760, // 10MB in bytes
         allowedMimeTypes: ['application/pdf'] // Only allow PDF files
       });
       
       if (createError) {
         console.error('Error creating applications bucket:', createError);
-        return;
-      }
-      
-      console.log('Created applications storage bucket');
-      
-      // Set bucket to public for easier access to files
-      const { error: updateError } = await supabase.storage.updateBucket('applications', {
-        public: true
-      });
-      
-      if (updateError) {
-        console.error('Error setting bucket to public:', updateError);
+      } else {
+        console.log('Created applications storage bucket');
+        
+        // Set bucket to public for easier access to files
+        const { error: updateError } = await supabase.storage.updateBucket('applications', {
+          public: true
+        });
+        
+        if (updateError) {
+          console.error('Error setting bucket to public:', updateError);
+        }
       }
     } else {
       console.log('Applications bucket already exists');
       
-      // Make sure bucket is public
+      // Update bucket settings to ensure it's public and has the right file size limit
       const { error: updateError } = await supabase.storage.updateBucket('applications', {
-        public: true
+        public: true,
+        fileSizeLimit: 10485760, // 10MB in bytes
+        allowedMimeTypes: ['application/pdf']
       });
       
       if (updateError) {
         console.error('Error updating bucket settings:', updateError);
+      } else {
+        console.log('Updated applications bucket settings');
       }
     }
   } catch (error) {
