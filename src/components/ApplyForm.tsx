@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Input } from '@/components/ui/input';
@@ -45,9 +44,9 @@ const ApplyForm: React.FC<ApplyFormProps> = ({ positionTitle, applicationType })
       const file = e.target.files[0];
       const { name } = e.target;
       
-      // Check file size (max 5MB)
-      if (file.size > 5 * 1024 * 1024) {
-        setFileError(`${name === 'cv' ? 'CV' : 'Motivation Letter'} file size exceeds 5MB limit`);
+      // Check file size (max 10MB)
+      if (file.size > 10 * 1024 * 1024) {
+        setFileError(`${name === 'cv' ? 'CV' : 'Motivation Letter'} file size exceeds 10MB limit`);
         e.target.value = ''; // Clear the input
         return;
       }
@@ -386,7 +385,7 @@ const ApplyForm: React.FC<ApplyFormProps> = ({ positionTitle, applicationType })
             onChange={handleFileChange}
             required
           />
-          <p className="text-sm text-gray-500 mt-1">Maximum file size: 5MB</p>
+          <p className="text-sm text-gray-500 mt-1">Maximum file size: 10MB</p>
         </div>
         
         <div>
@@ -399,7 +398,7 @@ const ApplyForm: React.FC<ApplyFormProps> = ({ positionTitle, applicationType })
             onChange={handleFileChange}
             required
           />
-          <p className="text-sm text-gray-500 mt-1">Maximum file size: 5MB</p>
+          <p className="text-sm text-gray-500 mt-1">Maximum file size: 10MB</p>
         </div>
       </div>
       
