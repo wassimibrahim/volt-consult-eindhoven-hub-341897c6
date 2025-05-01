@@ -20,6 +20,7 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
 // Initialize the applications storage bucket on client load
 (async () => {
   try {
+    console.log('Initializing storage bucket');
     // First check if bucket exists
     const { data: buckets, error } = await supabase.storage.listBuckets();
     
@@ -28,9 +29,12 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
       return;
     }
     
+    console.log('Available buckets:', buckets);
     const applicationsBucketExists = buckets?.some(bucket => bucket.name === 'applications');
+    console.log('Applications bucket exists:', applicationsBucketExists);
     
     if (!applicationsBucketExists) {
+      console.log('Creating applications bucket');
       // Create the bucket with public access
       const { error: createError } = await supabase.storage.createBucket('applications', {
         public: true,
@@ -50,6 +54,8 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
         
         if (updateError) {
           console.error('Error setting bucket to public:', updateError);
+        } else {
+          console.log('Successfully set bucket to public');
         }
       }
     } else {

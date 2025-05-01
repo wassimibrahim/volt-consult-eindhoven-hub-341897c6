@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Input } from '@/components/ui/input';
@@ -33,7 +34,7 @@ const ApplyForm: React.FC<ApplyFormProps> = ({ positionTitle, applicationType })
   const [uploadProgress, setUploadProgress] = useState(0);
   const [fileError, setFileError] = useState<string | null>(null);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
   };
@@ -135,8 +136,10 @@ const ApplyForm: React.FC<ApplyFormProps> = ({ positionTitle, applicationType })
       console.log('Files uploaded successfully, saving application data');
       
       // Create application object
+      const fullName = `${formData.firstName} ${formData.familyName}`;
+      
       const newApplication = {
-        fullName: `${formData.firstName} ${formData.familyName}`,
+        fullName: fullName,
         email: formData.email,
         position: positionTitle,
         type: applicationType,
@@ -312,7 +315,7 @@ const ApplyForm: React.FC<ApplyFormProps> = ({ positionTitle, applicationType })
             id="degreeProgram"
             name="degreeProgram"
             value={formData.degreeProgram}
-            onChange={handleInputChange as any}
+            onChange={handleInputChange}
             className="flex w-full rounded-md border border-input bg-background px-3 h-10 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             required
           >
@@ -345,7 +348,7 @@ const ApplyForm: React.FC<ApplyFormProps> = ({ positionTitle, applicationType })
             id="yearOfStudy"
             name="yearOfStudy"
             value={formData.yearOfStudy}
-            onChange={handleInputChange as any}
+            onChange={handleInputChange}
             className="flex w-full rounded-md border border-input bg-background px-3 h-10 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             required
           >

@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -344,6 +345,8 @@ export const saveApplication = async (application: {
     
     console.log('Saving application with data:', applicationData);
 
+    // Add debugging logs for the entire Supabase process
+    console.log('Preparing to insert into applications table');
     const { data, error } = await supabase
       .from('applications')
       .insert(applicationData)
