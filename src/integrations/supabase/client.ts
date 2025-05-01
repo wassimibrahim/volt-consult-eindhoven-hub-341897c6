@@ -17,12 +17,14 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
   }
 });
 
-// We need to ensure the bucket exists before any application submission
-export const ensureApplicationsBucketExists = async (): Promise<boolean> => {
+// Function to check if the applications bucket exists and is accessible
+// Rather than trying to create it (which requires admin privileges), 
+// we now just check if it exists and is accessible
+export const checkApplicationsBucket = async (): Promise<boolean> => {
   try {
-    console.log('Checking if applications bucket exists');
+    console.log('Checking if applications bucket is accessible');
     
-    // First, check if the bucket already exists
+    // First check if we can list the bucket
     const { data: buckets, error: bucketsError } = await supabase.storage.listBuckets();
     
     if (bucketsError) {
@@ -30,57 +32,29 @@ export const ensureApplicationsBucketExists = async (): Promise<boolean> => {
       return false;
     }
     
-    console.log('Available buckets:', buckets);
-    
-    // Check if applications bucket exists
+    // Check if applications bucket exists in the list
     const applicationsBucketExists = buckets?.some(bucket => bucket.name === 'applications');
-    console.log('Applications bucket exists:', applicationsBucketExists);
+    console.log('Applications bucket exists in list:', applicationsBucketExists);
     
     if (!applicationsBucketExists) {
-      console.log('Creating applications bucket');
-      // Create the applications bucket
-      const { error: createError } = await supabase.storage.createBucket('applications', {
-        public: true,
-        fileSizeLimit: 10485760, // 10MB
-        allowedMimeTypes: ['application/pdf']
-      });
-      
-      if (createError) {
-        console.error('Error creating applications bucket:', createError);
-        return false;
-      }
-      
-      console.log('Created applications bucket successfully');
-    } else {
-      console.log('Applications bucket already exists, updating settings');
-      
-      // Update the bucket to ensure settings are correct
-      const { error: updateError } = await supabase.storage.updateBucket('applications', {
-        public: true,
-        fileSizeLimit: 10485760, // 10MB
-        allowedMimeTypes: ['application/pdf']
-      });
-      
-      if (updateError) {
-        console.error('Error updating applications bucket settings:', updateError);
-        // Even if update fails, the bucket exists
-      } else {
-        console.log('Updated applications bucket settings successfully');
-      }
+      console.error('Applications bucket does not exist');
+      return false;
     }
     
+    // Attempt to list files in the bucket to verify permissions
+    const { data: files, error: filesError } = await supabase.storage
+      .from('applications')
+      .list();
+      
+    if (filesError) {
+      console.error('Error accessing applications bucket:', filesError);
+      return false;
+    }
+    
+    console.log('Successfully accessed applications bucket');
     return true;
   } catch (error) {
-    console.error('Unhandled error in bucket initialization:', error);
+    console.error('Unhandled error checking applications bucket:', error);
     return false;
   }
 };
-
-// Initialize the bucket immediately when this file is imported
-ensureApplicationsBucketExists().then(success => {
-  if (success) {
-    console.log('Applications bucket initialization completed successfully');
-  } else {
-    console.error('Failed to initialize applications bucket');
-  }
-});

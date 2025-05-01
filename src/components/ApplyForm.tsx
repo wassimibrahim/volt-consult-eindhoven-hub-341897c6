@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Input } from '@/components/ui/input';
@@ -6,7 +5,7 @@ import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from '@/components/ui/use-toast';
 import { saveApplication } from '../services/supabaseService';
-import { supabase, ensureApplicationsBucketExists } from '@/integrations/supabase/client';
+import { supabase, checkApplicationsBucket } from '@/integrations/supabase/client';
 import { AlertCircle } from 'lucide-react';
 
 interface ApplyFormProps {
@@ -41,7 +40,7 @@ const ApplyForm: React.FC<ApplyFormProps> = ({ positionTitle, applicationType })
   useEffect(() => {
     const checkBucket = async () => {
       try {
-        const isReady = await ensureApplicationsBucketExists();
+        const isReady = await checkApplicationsBucket();
         console.log('Bucket ready status:', isReady);
         setBucketReady(isReady);
         setBucketChecked(true);
@@ -103,7 +102,7 @@ const ApplyForm: React.FC<ApplyFormProps> = ({ positionTitle, applicationType })
       setUploadingFiles(true);
       
       // Double check that the bucket exists and is ready before uploading
-      const bucketStatus = await ensureApplicationsBucketExists();
+      const bucketStatus = await checkApplicationsBucket();
       if (!bucketStatus) {
         throw new Error('Storage is not available at this time. Please try again later.');
       }
@@ -161,7 +160,7 @@ const ApplyForm: React.FC<ApplyFormProps> = ({ positionTitle, applicationType })
       // Check if bucket is ready before proceeding
       if (!bucketReady) {
         // Try to ensure bucket one more time
-        const bucketStatus = await ensureApplicationsBucketExists();
+        const bucketStatus = await checkApplicationsBucket();
         if (!bucketStatus) {
           throw new Error('Storage service is currently unavailable. Please try again later.');
         }
