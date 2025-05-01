@@ -17,18 +17,27 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
   }
 });
 
-// Function to check if the applications bucket exists and is accessible
-// Rather than trying to create it (which requires admin privileges), 
-// we now just check if it exists and is accessible
-export const checkApplicationsBucket = async (): Promise<boolean> => {
+// Maximum retries for bucket operations
+const MAX_RETRIES = 3;
+
+// Function to check if the applications bucket exists with retry mechanism
+export const checkApplicationsBucket = async (retryCount = 0): Promise<boolean> => {
   try {
-    console.log('Checking if applications bucket is accessible');
+    console.log(`Checking if applications bucket is accessible (attempt ${retryCount + 1}/${MAX_RETRIES + 1})`);
     
     // First check if we can list the bucket
     const { data: buckets, error: bucketsError } = await supabase.storage.listBuckets();
     
     if (bucketsError) {
       console.error('Error listing buckets:', bucketsError);
+      
+      // Retry logic
+      if (retryCount < MAX_RETRIES) {
+        console.log(`Retrying in ${(retryCount + 1) * 1000}ms...`);
+        await new Promise(resolve => setTimeout(resolve, (retryCount + 1) * 1000));
+        return checkApplicationsBucket(retryCount + 1);
+      }
+      
       return false;
     }
     
@@ -48,6 +57,14 @@ export const checkApplicationsBucket = async (): Promise<boolean> => {
       
     if (filesError) {
       console.error('Error accessing applications bucket:', filesError);
+      
+      // Retry logic for file listing
+      if (retryCount < MAX_RETRIES) {
+        console.log(`Retrying in ${(retryCount + 1) * 1000}ms...`);
+        await new Promise(resolve => setTimeout(resolve, (retryCount + 1) * 1000));
+        return checkApplicationsBucket(retryCount + 1);
+      }
+      
       return false;
     }
     
@@ -55,6 +72,48 @@ export const checkApplicationsBucket = async (): Promise<boolean> => {
     return true;
   } catch (error) {
     console.error('Unhandled error checking applications bucket:', error);
+    
+    // Retry logic for unhandled errors
+    if (retryCount < MAX_RETRIES) {
+      console.log(`Retrying after error in ${(retryCount + 1) * 1000}ms...`);
+      await new Promise(resolve => setTimeout(resolve, (retryCount + 1) * 1000));
+      return checkApplicationsBucket(retryCount + 1);
+    }
+    
     return false;
+  }
+};
+
+// User roles management
+export type UserRole = 'user' | 'admin';
+
+export const getUserRole = async (): Promise<UserRole> => {
+  try {
+    // Check if the user is logged in
+    const { data: sessionData } = await supabase.auth.getSession();
+    if (!sessionData.session) {
+      console.log('No active session, defaulting to user role');
+      return 'user';
+    }
+    
+    // Admin check based on specific email domains or predefined admin users
+    const userEmail = sessionData.session.user.email;
+    
+    if (userEmail) {
+      // Admin check based on email
+      if (userEmail.includes('admin@') || userEmail.endsWith('@vcgeindhoven.nl')) {
+        console.log('Admin role assigned based on email');
+        return 'admin';
+      }
+      
+      // Additional check against stored admin users in the database could be added here
+    }
+    
+    // Default role
+    return 'user';
+    
+  } catch (error) {
+    console.error('Error determining user role:', error);
+    return 'user'; // Default to regular user on error
   }
 };

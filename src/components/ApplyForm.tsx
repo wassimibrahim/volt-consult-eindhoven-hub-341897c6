@@ -1,12 +1,13 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
-import { toast } from '@/components/ui/use-toast';
+import { toast } from '@/hooks/use-toast';
 import { saveApplication } from '../services/supabaseService';
 import { supabase, checkApplicationsBucket } from '@/integrations/supabase/client';
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, Loader2 } from 'lucide-react';
 
 interface ApplyFormProps {
   positionTitle: string;
@@ -35,20 +36,38 @@ const ApplyForm: React.FC<ApplyFormProps> = ({ positionTitle, applicationType })
   const [uploadingFiles, setUploadingFiles] = useState(false);
   const [bucketReady, setBucketReady] = useState(false);
   const [bucketChecked, setBucketChecked] = useState(false);
+  const [retryingBucketCheck, setRetryingBucketCheck] = useState(false);
 
   // Check if the applications bucket exists when component mounts
   useEffect(() => {
     const checkBucket = async () => {
       try {
+        setRetryingBucketCheck(true);
         const isReady = await checkApplicationsBucket();
         console.log('Bucket ready status:', isReady);
         setBucketReady(isReady);
         setBucketChecked(true);
+        setRetryingBucketCheck(false);
+        
+        if (!isReady) {
+          toast({
+            title: "Storage Service Issue",
+            description: "There was a problem connecting to our file storage. Please try again in a moment.",
+            variant: "destructive",
+          });
+        }
       } catch (error) {
         console.error('Error checking bucket:', error);
         setBucketReady(false);
         setBucketChecked(true);
+        setRetryingBucketCheck(false);
         setFileError('There was an issue connecting to the storage service. Please try again later.');
+        
+        toast({
+          title: "Connection Error",
+          description: "Failed to connect to storage service. Please try again later.",
+          variant: "destructive",
+        });
       }
     };
     
@@ -145,6 +164,39 @@ const ApplyForm: React.FC<ApplyFormProps> = ({ positionTitle, applicationType })
     }
   };
 
+  const handleRetryBucketCheck = async () => {
+    setRetryingBucketCheck(true);
+    setBucketChecked(false);
+    setFileError(null);
+    
+    try {
+      const isReady = await checkApplicationsBucket();
+      console.log('Retry bucket check result:', isReady);
+      setBucketReady(isReady);
+      setBucketChecked(true);
+      
+      if (isReady) {
+        toast({
+          title: "Connection Restored",
+          description: "Storage service is now available. You can proceed with your application.",
+          variant: "default",
+        });
+      } else {
+        toast({
+          title: "Still Unavailable",
+          description: "Storage service is still unavailable. Please try again later.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error('Error retrying bucket check:', error);
+      setBucketReady(false);
+      setFileError('Connection to storage service failed. Please try again later.');
+    } finally {
+      setRetryingBucketCheck(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setSubmitting(true);
@@ -225,7 +277,7 @@ const ApplyForm: React.FC<ApplyFormProps> = ({ positionTitle, applicationType })
       // Show success message
       toast({
         title: "Application Submitted",
-        description: "Your application has been submitted successfully!",
+        description: "Your application has been submitted successfully! You will be redirected to the homepage.",
         variant: "default",
       });
       
@@ -283,13 +335,25 @@ const ApplyForm: React.FC<ApplyFormProps> = ({ positionTitle, applicationType })
               We're currently experiencing issues with our file storage system. Please try again later.
             </p>
             <button 
-              onClick={() => window.location.reload()}
-              className="mt-3 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 text-sm"
+              onClick={handleRetryBucketCheck}
+              disabled={retryingBucketCheck}
+              className="mt-3 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 text-sm flex items-center gap-2 disabled:opacity-70"
             >
-              Retry
+              {retryingBucketCheck && <Loader2 className="w-4 h-4 animate-spin" />}
+              {retryingBucketCheck ? 'Checking...' : 'Retry'}
             </button>
           </div>
         </div>
+      </div>
+    );
+  }
+
+  // Show loading indicator while bucket check is in progress
+  if (!bucketChecked) {
+    return (
+      <div className="space-y-6 bg-white p-8 rounded-xl shadow-md border border-gray-100 flex flex-col items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-gray-500" />
+        <p className="text-gray-600">Checking storage service availability...</p>
       </div>
     );
   }
@@ -503,9 +567,10 @@ const ApplyForm: React.FC<ApplyFormProps> = ({ positionTitle, applicationType })
       {/* Submit button */}
       <button
         type="submit"
-        className="w-full bg-[#F00000] text-white py-3 rounded-md hover:bg-[#F00000]/90 font-medium disabled:opacity-60 disabled:cursor-not-allowed"
+        className="w-full bg-[#F00000] text-white py-3 rounded-md hover:bg-[#F00000]/90 font-medium disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
         disabled={submitting || !formData.agreeToTerms || !bucketReady}
       >
+        {submitting && <Loader2 className="w-4 h-4 animate-spin" />}
         {submitting ? 'Submitting...' : 'Submit Application'}
       </button>
     </form>

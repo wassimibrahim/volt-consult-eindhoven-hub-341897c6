@@ -1,22 +1,25 @@
 
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { useToast } from '@/components/ui/use-toast';
-import { LockKeyhole } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { LockKeyhole, AlertCircle } from 'lucide-react';
 import { login, logout } from '../services/supabaseService';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, getUserRole, UserRole } from '@/integrations/supabase/client';
 
 interface AdminAuthProps {
   children: React.ReactNode;
 }
 
 const AdminAuth = ({ children }: AdminAuthProps) => {
+  const navigate = useNavigate();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [authChecked, setAuthChecked] = useState(false);
   const { toast } = useToast();
 
   // Required admin credentials
@@ -27,42 +30,75 @@ const AdminAuth = ({ children }: AdminAuthProps) => {
     // Check if user is already authenticated
     const checkAuth = async () => {
       try {
+        setIsLoading(true);
         // Check local storage first for quick access
         if (localStorage.getItem('adminAuthenticated') === 'true') {
           setIsAuthenticated(true);
+          setIsAdmin(true);
+          setAuthChecked(true);
+          setIsLoading(false);
           return;
         }
         
         // Then check Supabase auth session
         const { data } = await supabase.auth.getSession();
         if (data.session) {
+          // Check if the user has admin role
+          const userRole = await getUserRole();
+          const hasAdminAccess = userRole === 'admin';
+          
           setIsAuthenticated(true);
-          localStorage.setItem('adminAuthenticated', 'true');
+          setIsAdmin(hasAdminAccess);
+          
+          if (hasAdminAccess) {
+            localStorage.setItem('adminAuthenticated', 'true');
+          } else {
+            // If authenticated but not admin, show message and redirect
+            toast({
+              title: "Access Denied",
+              description: "You don't have admin privileges to access this area.",
+              variant: "destructive",
+            });
+            setTimeout(() => navigate('/'), 2000);
+          }
         }
       } catch (error) {
         console.error("Error checking auth:", error);
         localStorage.removeItem('adminAuthenticated');
+      } finally {
+        setAuthChecked(true);
+        setIsLoading(false);
       }
     };
     
     checkAuth();
     
     // Set up auth state change listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       const isAuth = !!session;
       setIsAuthenticated(isAuth);
       
       if (isAuth) {
-        localStorage.setItem('adminAuthenticated', 'true');
+        // Check role on auth state change
+        const userRole = await getUserRole();
+        const hasAdminAccess = userRole === 'admin';
+        setIsAdmin(hasAdminAccess);
+        
+        if (hasAdminAccess) {
+          localStorage.setItem('adminAuthenticated', 'true');
+        } else {
+          localStorage.removeItem('adminAuthenticated');
+        }
       } else if (event === 'SIGNED_OUT') {
         localStorage.removeItem('adminAuthenticated');
+        setIsAdmin(false);
       }
     });
     
     return () => {
       subscription.unsubscribe();
     };
-  }, []);
+  }, [navigate, toast]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -72,6 +108,7 @@ const AdminAuth = ({ children }: AdminAuthProps) => {
       // Check against required admin credentials
       if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
         setIsAuthenticated(true);
+        setIsAdmin(true);
         localStorage.setItem('adminAuthenticated', 'true');
         toast({
           title: "Success",
@@ -85,12 +122,28 @@ const AdminAuth = ({ children }: AdminAuthProps) => {
         try {
           // Try to log in with Supabase
           await login(username, password);
-          setIsAuthenticated(true);
-          localStorage.setItem('adminAuthenticated', 'true');
-          toast({
-            title: "Success",
-            description: "You have successfully logged in as admin.",
-          });
+          
+          // Check if the user has admin role
+          const userRole = await getUserRole();
+          const hasAdminAccess = userRole === 'admin';
+          
+          if (hasAdminAccess) {
+            setIsAdmin(true);
+            localStorage.setItem('adminAuthenticated', 'true');
+            toast({
+              title: "Success",
+              description: "You have successfully logged in as admin.",
+            });
+          } else {
+            toast({
+              title: "Access Denied",
+              description: "Your account doesn't have admin privileges.",
+              variant: "destructive",
+            });
+            // Sign out non-admin users
+            await logout();
+            setIsAuthenticated(false);
+          }
         } catch (loginError: any) {
           console.error('Login error:', loginError);
           throw new Error(loginError.message || 'Invalid credentials');
@@ -117,6 +170,7 @@ const AdminAuth = ({ children }: AdminAuthProps) => {
     try {
       await logout();
       setIsAuthenticated(false);
+      setIsAdmin(false);
       localStorage.removeItem('adminAuthenticated');
       
       toast({
@@ -135,7 +189,19 @@ const AdminAuth = ({ children }: AdminAuthProps) => {
     }
   };
 
-  if (isAuthenticated) {
+  // Show loading state while checking authentication
+  if (!authChecked) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-700 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading admin panel...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (isAuthenticated && isAdmin) {
     return (
       <div>
         <div className="bg-gray-100 p-4 mb-6 rounded-lg flex justify-between items-center">
@@ -160,6 +226,18 @@ const AdminAuth = ({ children }: AdminAuthProps) => {
           </div>
           
           <h1 className="text-2xl font-bold text-center mb-6">Admin Access</h1>
+          
+          {isAuthenticated && !isAdmin && (
+            <div className="mb-6 bg-yellow-50 border border-yellow-200 rounded-md p-4 flex items-start gap-3">
+              <AlertCircle className="w-5 h-5 text-yellow-500 mt-0.5 flex-shrink-0" />
+              <div>
+                <p className="text-yellow-700 font-medium">Access Denied</p>
+                <p className="text-yellow-600 text-sm mt-1">
+                  Your account doesn't have admin privileges. Please log in with an admin account.
+                </p>
+              </div>
+            </div>
+          )}
           
           <form onSubmit={handleLogin}>
             <div className="mb-4">
