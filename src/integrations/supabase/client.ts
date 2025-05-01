@@ -21,11 +21,12 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
 (async () => {
   try {
     console.log('Initializing storage bucket');
-    // First check if bucket exists
+    
+    // Check if bucket exists - wrapped in a try-catch to handle any potential errors
     const { data: buckets, error } = await supabase.storage.listBuckets();
     
     if (error) {
-      console.error('Error listing buckets:', error);
+      console.error('Error checking storage buckets:', error);
       return;
     }
     
@@ -35,46 +36,66 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
     
     if (!applicationsBucketExists) {
       console.log('Creating applications bucket');
-      // Create the bucket with public access
+      // Create the applications bucket
       const { error: createError } = await supabase.storage.createBucket('applications', {
         public: true,
-        fileSizeLimit: 10485760, // 10MB in bytes
-        allowedMimeTypes: ['application/pdf'] // Only allow PDF files
+        fileSizeLimit: 10485760, // 10MB
+        allowedMimeTypes: ['application/pdf']
       });
       
       if (createError) {
         console.error('Error creating applications bucket:', createError);
       } else {
-        console.log('Created applications storage bucket');
+        console.log('Created applications bucket successfully');
         
-        // Set bucket to public for easier access to files
+        // Ensure the bucket is public for easier access to files
         const { error: updateError } = await supabase.storage.updateBucket('applications', {
           public: true
         });
         
         if (updateError) {
-          console.error('Error setting bucket to public:', updateError);
+          console.error('Error setting applications bucket to public:', updateError);
         } else {
-          console.log('Successfully set bucket to public');
+          console.log('Successfully set applications bucket to public');
         }
       }
     } else {
-      console.log('Applications bucket already exists');
+      console.log('Applications bucket already exists, updating settings');
       
-      // Update bucket settings to ensure it's public and has the right file size limit
+      // Update the existing bucket to ensure settings are correct
       const { error: updateError } = await supabase.storage.updateBucket('applications', {
         public: true,
-        fileSizeLimit: 10485760, // 10MB in bytes
+        fileSizeLimit: 10485760, // 10MB
         allowedMimeTypes: ['application/pdf']
       });
       
       if (updateError) {
-        console.error('Error updating bucket settings:', updateError);
+        console.error('Error updating applications bucket settings:', updateError);
       } else {
-        console.log('Updated applications bucket settings');
+        console.log('Updated applications bucket settings successfully');
+      }
+    }
+    
+    // Verify public policy explicitly
+    console.log('Verifying bucket permissions...');
+    const { data: bucketInfo, error: bucketError } = await supabase.storage.getBucket('applications');
+    if (bucketError) {
+      console.error('Error getting bucket info:', bucketError);
+    } else {
+      console.log('Bucket info:', bucketInfo);
+      if (!bucketInfo.public) {
+        console.warn('Bucket is not public! Attempting to fix...');
+        const { error: fixPublicError } = await supabase.storage.updateBucket('applications', {
+          public: true
+        });
+        if (fixPublicError) {
+          console.error('Failed to set bucket to public:', fixPublicError);
+        } else {
+          console.log('Successfully fixed bucket to be public');
+        }
       }
     }
   } catch (error) {
-    console.error('Error initializing storage bucket:', error);
+    console.error('Unhandled error in storage bucket initialization:', error);
   }
 })();

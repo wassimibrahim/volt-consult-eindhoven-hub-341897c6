@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -33,6 +33,15 @@ const ApplyForm: React.FC<ApplyFormProps> = ({ positionTitle, applicationType })
   const [submitting, setSubmitting] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [fileError, setFileError] = useState<string | null>(null);
+  const [uploadingFiles, setUploadingFiles] = useState(false);
+
+  // Clear error message when component unmounts
+  useEffect(() => {
+    return () => {
+      setFileError(null);
+      setUploadProgress(0);
+    };
+  }, []);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -45,14 +54,14 @@ const ApplyForm: React.FC<ApplyFormProps> = ({ positionTitle, applicationType })
       const file = e.target.files[0];
       const { name } = e.target;
       
-      // Check file size (max 10MB)
+      // Validate file size (10MB limit)
       if (file.size > 10 * 1024 * 1024) {
         setFileError(`${name === 'cv' ? 'CV' : 'Motivation Letter'} file size exceeds 10MB limit`);
         e.target.value = ''; // Clear the input
         return;
       }
       
-      // Check file type (only PDF)
+      // Validate file type (PDF only)
       if (file.type !== 'application/pdf') {
         setFileError(`${name === 'cv' ? 'CV' : 'Motivation Letter'} must be a PDF file`);
         e.target.value = ''; // Clear the input
@@ -69,7 +78,22 @@ const ApplyForm: React.FC<ApplyFormProps> = ({ positionTitle, applicationType })
   
   const uploadFileToSupabase = async (file: File, filePath: string): Promise<string> => {
     try {
-      console.log(`Attempting to upload file: ${file.name} to path: ${filePath}`);
+      console.log(`Uploading file: ${file.name} to path: ${filePath}`);
+      setUploadingFiles(true);
+      
+      // Ensure applications bucket exists before upload
+      const { data: buckets, error: bucketsError } = await supabase.storage.listBuckets();
+      
+      if (bucketsError) {
+        console.error('Error listing buckets:', bucketsError);
+        throw new Error('Failed to check if storage bucket exists');
+      }
+
+      const applicationsBucketExists = buckets?.some(bucket => bucket.name === 'applications');
+      if (!applicationsBucketExists) {
+        console.error('Applications bucket does not exist. Cannot upload file.');
+        throw new Error('Applications bucket does not exist');
+      }
       
       // Upload the file to Supabase Storage
       const { data, error } = await supabase.storage
@@ -84,7 +108,11 @@ const ApplyForm: React.FC<ApplyFormProps> = ({ positionTitle, applicationType })
         throw new Error(`File upload failed: ${error.message}`);
       }
       
-      console.log('Upload successful, getting public URL');
+      if (!data) {
+        throw new Error('Upload successful but no data returned');
+      }
+      
+      console.log('Upload successful, getting public URL for:', filePath);
       
       // Get the public URL for the uploaded file
       const { data: publicUrlData } = supabase.storage
@@ -97,9 +125,11 @@ const ApplyForm: React.FC<ApplyFormProps> = ({ positionTitle, applicationType })
       
       console.log('Public URL obtained:', publicUrlData.publicUrl);
       return publicUrlData.publicUrl;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error in uploadFileToSupabase:', error);
       throw error;
+    } finally {
+      setUploadingFiles(false);
     }
   };
 
@@ -110,11 +140,12 @@ const ApplyForm: React.FC<ApplyFormProps> = ({ positionTitle, applicationType })
     setFileError(null);
     
     try {
-      // Check if files are provided
+      // Validate files are provided
       if (!formData.cv || !formData.motivationLetter) {
         throw new Error('Both CV and Motivation Letter files are required');
       }
-      
+
+      console.log('Starting application process...');
       setUploadProgress(20);
       
       // Upload files to Supabase Storage
@@ -122,18 +153,20 @@ const ApplyForm: React.FC<ApplyFormProps> = ({ positionTitle, applicationType })
       const safeEmail = formData.email.replace(/[^a-zA-Z0-9]/g, '_');
       
       // Upload CV
+      console.log('Uploading CV file...');
       const cvFilePath = `${safeEmail}/${timestamp}_CV_${formData.cv.name.replace(/[^a-zA-Z0-9._]/g, '_')}`;
-      console.log('Uploading CV:', cvFilePath);
       const cvUrl = await uploadFileToSupabase(formData.cv, cvFilePath);
       setUploadProgress(50);
       
       // Upload Motivation Letter
+      console.log('Uploading Motivation Letter file...');
       const motivationLetterFilePath = `${safeEmail}/${timestamp}_MotivationLetter_${formData.motivationLetter.name.replace(/[^a-zA-Z0-9._]/g, '_')}`;
-      console.log('Uploading Motivation Letter:', motivationLetterFilePath);
       const motivationLetterUrl = await uploadFileToSupabase(formData.motivationLetter, motivationLetterFilePath);
-      setUploadProgress(75);
+      setUploadProgress(70);
       
-      console.log('Files uploaded successfully, saving application data');
+      console.log('Files uploaded successfully:');
+      console.log('CV URL:', cvUrl);
+      console.log('Motivation Letter URL:', motivationLetterUrl);
       
       // Create application object
       const fullName = `${formData.firstName} ${formData.familyName}`;
@@ -159,12 +192,12 @@ const ApplyForm: React.FC<ApplyFormProps> = ({ positionTitle, applicationType })
         }
       };
       
-      setUploadProgress(85);
+      setUploadProgress(80);
       
+      console.log('Saving application data:', newApplication);
       // Save application using service
-      console.log('Saving application to database:', newApplication);
       const savedApplication = await saveApplication(newApplication);
-      console.log('Successfully saved application:', savedApplication);
+      console.log('Application saved successfully:', savedApplication);
       
       setUploadProgress(100);
       
@@ -175,12 +208,12 @@ const ApplyForm: React.FC<ApplyFormProps> = ({ positionTitle, applicationType })
         variant: "default",
       });
       
-      // Redirect to home page
+      // Redirect to home page after short delay
       setTimeout(() => navigate('/'), 2000);
     } catch (error: any) {
       console.error('Error submitting application:', error);
       
-      // Show appropriate error message
+      // Display appropriate error message
       toast({
         title: "Error",
         description: error.message || "There was an error submitting your application. Please try again.",
@@ -190,7 +223,6 @@ const ApplyForm: React.FC<ApplyFormProps> = ({ positionTitle, applicationType })
       setFileError(error.message || "File upload failed");
     } finally {
       setSubmitting(false);
-      setTimeout(() => setUploadProgress(0), 1000);
     }
   };
 
@@ -236,14 +268,14 @@ const ApplyForm: React.FC<ApplyFormProps> = ({ positionTitle, applicationType })
             ></div>
           </div>
           <p className="text-sm text-gray-500 mt-1 text-center">
-            Uploading... {uploadProgress}%
+            {uploadingFiles ? 'Uploading files...' : 'Processing...'} {uploadProgress}%
           </p>
         </div>
       )}
       
+      {/* Personal Information section */}
       <h3 className="text-xl font-semibold mb-6">Personal Information</h3>
       
-      {/* Personal Information Fields */}
       <div className="space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
@@ -375,6 +407,7 @@ const ApplyForm: React.FC<ApplyFormProps> = ({ positionTitle, applicationType })
       
       <hr className="my-6" />
       
+      {/* Documents section */}
       <h3 className="text-xl font-semibold mb-6">Documents</h3>
       
       <div className="space-y-4">
@@ -407,6 +440,7 @@ const ApplyForm: React.FC<ApplyFormProps> = ({ positionTitle, applicationType })
       
       <hr className="my-6" />
       
+      {/* Agreement section */}
       <div className="flex items-center space-x-2">
         <Checkbox 
           id="agreeToTerms" 
@@ -422,6 +456,7 @@ const ApplyForm: React.FC<ApplyFormProps> = ({ positionTitle, applicationType })
         </label>
       </div>
       
+      {/* Submit button */}
       <button
         type="submit"
         className="w-full bg-[#F00000] text-white py-3 rounded-md hover:bg-[#F00000]/90 font-medium disabled:opacity-60 disabled:cursor-not-allowed"
