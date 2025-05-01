@@ -17,20 +17,22 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
   }
 });
 
-// Initialize the applications storage bucket on client load
-(async () => {
+// We need to ensure the bucket exists before any application submission
+export const ensureApplicationsBucketExists = async (): Promise<boolean> => {
   try {
-    console.log('Initializing storage bucket');
+    console.log('Checking if applications bucket exists');
     
-    // Check if bucket exists - wrapped in a try-catch to handle any potential errors
-    const { data: buckets, error } = await supabase.storage.listBuckets();
+    // First, check if the bucket already exists
+    const { data: buckets, error: bucketsError } = await supabase.storage.listBuckets();
     
-    if (error) {
-      console.error('Error checking storage buckets:', error);
-      return;
+    if (bucketsError) {
+      console.error('Error listing buckets:', bucketsError);
+      return false;
     }
     
     console.log('Available buckets:', buckets);
+    
+    // Check if applications bucket exists
     const applicationsBucketExists = buckets?.some(bucket => bucket.name === 'applications');
     console.log('Applications bucket exists:', applicationsBucketExists);
     
@@ -45,24 +47,14 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
       
       if (createError) {
         console.error('Error creating applications bucket:', createError);
-      } else {
-        console.log('Created applications bucket successfully');
-        
-        // Ensure the bucket is public for easier access to files
-        const { error: updateError } = await supabase.storage.updateBucket('applications', {
-          public: true
-        });
-        
-        if (updateError) {
-          console.error('Error setting applications bucket to public:', updateError);
-        } else {
-          console.log('Successfully set applications bucket to public');
-        }
+        return false;
       }
+      
+      console.log('Created applications bucket successfully');
     } else {
       console.log('Applications bucket already exists, updating settings');
       
-      // Update the existing bucket to ensure settings are correct
+      // Update the bucket to ensure settings are correct
       const { error: updateError } = await supabase.storage.updateBucket('applications', {
         public: true,
         fileSizeLimit: 10485760, // 10MB
@@ -71,31 +63,24 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
       
       if (updateError) {
         console.error('Error updating applications bucket settings:', updateError);
+        // Even if update fails, the bucket exists
       } else {
         console.log('Updated applications bucket settings successfully');
       }
     }
     
-    // Verify public policy explicitly
-    console.log('Verifying bucket permissions...');
-    const { data: bucketInfo, error: bucketError } = await supabase.storage.getBucket('applications');
-    if (bucketError) {
-      console.error('Error getting bucket info:', bucketError);
-    } else {
-      console.log('Bucket info:', bucketInfo);
-      if (!bucketInfo.public) {
-        console.warn('Bucket is not public! Attempting to fix...');
-        const { error: fixPublicError } = await supabase.storage.updateBucket('applications', {
-          public: true
-        });
-        if (fixPublicError) {
-          console.error('Failed to set bucket to public:', fixPublicError);
-        } else {
-          console.log('Successfully fixed bucket to be public');
-        }
-      }
-    }
+    return true;
   } catch (error) {
-    console.error('Unhandled error in storage bucket initialization:', error);
+    console.error('Unhandled error in bucket initialization:', error);
+    return false;
   }
-})();
+};
+
+// Initialize the bucket immediately when this file is imported
+ensureApplicationsBucketExists().then(success => {
+  if (success) {
+    console.log('Applications bucket initialization completed successfully');
+  } else {
+    console.error('Failed to initialize applications bucket');
+  }
+});

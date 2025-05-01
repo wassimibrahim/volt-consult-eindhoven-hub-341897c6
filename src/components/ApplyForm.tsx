@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from '@/components/ui/use-toast';
 import { saveApplication } from '../services/supabaseService';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, ensureApplicationsBucketExists } from '@/integrations/supabase/client';
 import { AlertCircle } from 'lucide-react';
 
 interface ApplyFormProps {
@@ -34,6 +34,27 @@ const ApplyForm: React.FC<ApplyFormProps> = ({ positionTitle, applicationType })
   const [uploadProgress, setUploadProgress] = useState(0);
   const [fileError, setFileError] = useState<string | null>(null);
   const [uploadingFiles, setUploadingFiles] = useState(false);
+  const [bucketReady, setBucketReady] = useState(false);
+  const [bucketChecked, setBucketChecked] = useState(false);
+
+  // Check if the applications bucket exists when component mounts
+  useEffect(() => {
+    const checkBucket = async () => {
+      try {
+        const isReady = await ensureApplicationsBucketExists();
+        console.log('Bucket ready status:', isReady);
+        setBucketReady(isReady);
+        setBucketChecked(true);
+      } catch (error) {
+        console.error('Error checking bucket:', error);
+        setBucketReady(false);
+        setBucketChecked(true);
+        setFileError('There was an issue connecting to the storage service. Please try again later.');
+      }
+    };
+    
+    checkBucket();
+  }, []);
 
   // Clear error message when component unmounts
   useEffect(() => {
@@ -81,18 +102,10 @@ const ApplyForm: React.FC<ApplyFormProps> = ({ positionTitle, applicationType })
       console.log(`Uploading file: ${file.name} to path: ${filePath}`);
       setUploadingFiles(true);
       
-      // Ensure applications bucket exists before upload
-      const { data: buckets, error: bucketsError } = await supabase.storage.listBuckets();
-      
-      if (bucketsError) {
-        console.error('Error listing buckets:', bucketsError);
-        throw new Error('Failed to check if storage bucket exists');
-      }
-
-      const applicationsBucketExists = buckets?.some(bucket => bucket.name === 'applications');
-      if (!applicationsBucketExists) {
-        console.error('Applications bucket does not exist. Cannot upload file.');
-        throw new Error('Applications bucket does not exist');
+      // Double check that the bucket exists and is ready before uploading
+      const bucketStatus = await ensureApplicationsBucketExists();
+      if (!bucketStatus) {
+        throw new Error('Storage is not available at this time. Please try again later.');
       }
       
       // Upload the file to Supabase Storage
@@ -143,6 +156,15 @@ const ApplyForm: React.FC<ApplyFormProps> = ({ positionTitle, applicationType })
       // Validate files are provided
       if (!formData.cv || !formData.motivationLetter) {
         throw new Error('Both CV and Motivation Letter files are required');
+      }
+
+      // Check if bucket is ready before proceeding
+      if (!bucketReady) {
+        // Try to ensure bucket one more time
+        const bucketStatus = await ensureApplicationsBucketExists();
+        if (!bucketStatus) {
+          throw new Error('Storage service is currently unavailable. Please try again later.');
+        }
       }
 
       console.log('Starting application process...');
@@ -249,6 +271,29 @@ const ApplyForm: React.FC<ApplyFormProps> = ({ positionTitle, applicationType })
   const yearOptions = ['1st Year', '2nd Year', '3rd Year', '4th Year', '5th Year', 'Graduate'];
 
   const showCustomDegreeField = formData.degreeProgram === 'Master' || formData.degreeProgram === 'Other';
+
+  // Show bucket status message if there's an issue
+  if (bucketChecked && !bucketReady) {
+    return (
+      <div className="space-y-6 bg-white p-8 rounded-xl shadow-md border border-gray-100">
+        <div className="bg-red-50 border border-red-200 rounded-md p-4 flex items-start gap-3">
+          <AlertCircle className="w-5 h-5 text-red-500 mt-0.5 flex-shrink-0" />
+          <div>
+            <p className="text-red-700 font-medium">Storage Service Unavailable</p>
+            <p className="text-red-600 text-sm mt-1">
+              We're currently experiencing issues with our file storage system. Please try again later.
+            </p>
+            <button 
+              onClick={() => window.location.reload()}
+              className="mt-3 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 text-sm"
+            >
+              Retry
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6 bg-white p-8 rounded-xl shadow-md border border-gray-100">
@@ -460,7 +505,7 @@ const ApplyForm: React.FC<ApplyFormProps> = ({ positionTitle, applicationType })
       <button
         type="submit"
         className="w-full bg-[#F00000] text-white py-3 rounded-md hover:bg-[#F00000]/90 font-medium disabled:opacity-60 disabled:cursor-not-allowed"
-        disabled={submitting || !formData.agreeToTerms}
+        disabled={submitting || !formData.agreeToTerms || !bucketReady}
       >
         {submitting ? 'Submitting...' : 'Submit Application'}
       </button>
