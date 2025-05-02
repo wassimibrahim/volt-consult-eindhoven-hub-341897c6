@@ -6,8 +6,8 @@ import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from '@/hooks/use-toast';
 import { saveApplication } from '../services/supabaseService';
-import { supabase, checkApplicationsBucket } from '@/integrations/supabase/client';
-import { AlertCircle, Loader2 } from 'lucide-react';
+import { supabase, checkApplicationsBucket, createApplicationsBucketIfNotExists } from '@/integrations/supabase/client';
+import { AlertCircle, Loader2, CheckCircle } from 'lucide-react';
 
 interface ApplyFormProps {
   positionTitle: string;
@@ -37,12 +37,25 @@ const ApplyForm: React.FC<ApplyFormProps> = ({ positionTitle, applicationType })
   const [bucketReady, setBucketReady] = useState(false);
   const [bucketChecked, setBucketChecked] = useState(false);
   const [retryingBucketCheck, setRetryingBucketCheck] = useState(false);
+  const [submissionSuccess, setSubmissionSuccess] = useState(false);
 
   // Check if the applications bucket exists when component mounts
   useEffect(() => {
-    const checkBucket = async () => {
+    const initializeBucket = async () => {
       try {
         setRetryingBucketCheck(true);
+        
+        // First try to create the bucket if it doesn't exist
+        const created = await createApplicationsBucketIfNotExists();
+        if (created) {
+          console.log('Bucket created or already exists and is accessible');
+          setBucketReady(true);
+          setBucketChecked(true);
+          setRetryingBucketCheck(false);
+          return;
+        }
+        
+        // If creation failed or we don't have permissions, check if it's at least accessible
         const isReady = await checkApplicationsBucket();
         console.log('Bucket ready status:', isReady);
         setBucketReady(isReady);
@@ -71,7 +84,7 @@ const ApplyForm: React.FC<ApplyFormProps> = ({ positionTitle, applicationType })
       }
     };
     
-    checkBucket();
+    initializeBucket();
   }, []);
 
   // Clear error message when component unmounts
@@ -170,6 +183,24 @@ const ApplyForm: React.FC<ApplyFormProps> = ({ positionTitle, applicationType })
     setFileError(null);
     
     try {
+      // First try to create the bucket if it doesn't exist
+      const created = await createApplicationsBucketIfNotExists();
+      if (created) {
+        console.log('Bucket created or already exists and is accessible');
+        setBucketReady(true);
+        setBucketChecked(true);
+        setRetryingBucketCheck(false);
+        
+        toast({
+          title: "Connection Restored",
+          description: "Storage service is now available. You can proceed with your application.",
+          variant: "default",
+        });
+        
+        return;
+      }
+      
+      // If creation failed, check if it's at least accessible
       const isReady = await checkApplicationsBucket();
       console.log('Retry bucket check result:', isReady);
       setBucketReady(isReady);
@@ -202,6 +233,7 @@ const ApplyForm: React.FC<ApplyFormProps> = ({ positionTitle, applicationType })
     setSubmitting(true);
     setUploadProgress(10);
     setFileError(null);
+    setSubmissionSuccess(false);
     
     try {
       // Validate files are provided
@@ -212,9 +244,14 @@ const ApplyForm: React.FC<ApplyFormProps> = ({ positionTitle, applicationType })
       // Check if bucket is ready before proceeding
       if (!bucketReady) {
         // Try to ensure bucket one more time
-        const bucketStatus = await checkApplicationsBucket();
-        if (!bucketStatus) {
-          throw new Error('Storage service is currently unavailable. Please try again later.');
+        const created = await createApplicationsBucketIfNotExists();
+        if (!created) {
+          const bucketStatus = await checkApplicationsBucket();
+          if (!bucketStatus) {
+            throw new Error('Storage service is currently unavailable. Please try again later.');
+          }
+        } else {
+          setBucketReady(true);
         }
       }
 
@@ -273,6 +310,7 @@ const ApplyForm: React.FC<ApplyFormProps> = ({ positionTitle, applicationType })
       console.log('Application saved successfully:', savedApplication);
       
       setUploadProgress(100);
+      setSubmissionSuccess(true);
       
       // Show success message
       toast({
@@ -282,7 +320,7 @@ const ApplyForm: React.FC<ApplyFormProps> = ({ positionTitle, applicationType })
       });
       
       // Redirect to home page after short delay
-      setTimeout(() => navigate('/'), 2000);
+      setTimeout(() => navigate('/'), 3000);
     } catch (error: any) {
       console.error('Error submitting application:', error);
       
@@ -322,6 +360,27 @@ const ApplyForm: React.FC<ApplyFormProps> = ({ positionTitle, applicationType })
   const yearOptions = ['1st Year', '2nd Year', '3rd Year', '4th Year', '5th Year', 'Graduate'];
 
   const showCustomDegreeField = formData.degreeProgram === 'Master' || formData.degreeProgram === 'Other';
+
+  // Show success message if submission was successful
+  if (submissionSuccess) {
+    return (
+      <div className="space-y-6 bg-white p-8 rounded-xl shadow-md border border-gray-100 flex flex-col items-center justify-center">
+        <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
+          <CheckCircle className="w-8 h-8 text-green-600" />
+        </div>
+        <h2 className="text-2xl font-bold text-center">Application Submitted Successfully!</h2>
+        <p className="text-center text-gray-600">
+          Thank you for your application to {positionTitle}. We will review your application and get back to you soon.
+        </p>
+        <p className="text-center text-gray-500 text-sm">
+          You will be redirected to the homepage in a few seconds...
+        </p>
+        <div className="animate-pulse mt-4">
+          <Loader2 className="w-6 h-6 text-gray-400 mx-auto animate-spin" />
+        </div>
+      </div>
+    );
+  }
 
   // Show bucket status message if there's an issue
   if (bucketChecked && !bucketReady) {

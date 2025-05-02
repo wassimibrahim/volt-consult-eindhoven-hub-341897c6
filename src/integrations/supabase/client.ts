@@ -20,6 +20,82 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
 // Maximum retries for bucket operations
 const MAX_RETRIES = 3;
 
+// Function to create applications bucket if it doesn't exist
+export const createApplicationsBucketIfNotExists = async (retryCount = 0): Promise<boolean> => {
+  try {
+    console.log(`Checking if applications bucket exists (attempt ${retryCount + 1}/${MAX_RETRIES + 1})`);
+    
+    // First check if we can list the bucket
+    const { data: buckets, error: bucketsError } = await supabase.storage.listBuckets();
+    
+    if (bucketsError) {
+      console.error('Error listing buckets:', bucketsError);
+      
+      // Retry logic
+      if (retryCount < MAX_RETRIES) {
+        console.log(`Retrying in ${(retryCount + 1) * 1000}ms...`);
+        await new Promise(resolve => setTimeout(resolve, (retryCount + 1) * 1000));
+        return createApplicationsBucketIfNotExists(retryCount + 1);
+      }
+      
+      return false;
+    }
+    
+    // Check if applications bucket exists in the list
+    const applicationsBucketExists = buckets?.some(bucket => bucket.name === 'applications');
+    console.log('Applications bucket exists in list:', applicationsBucketExists);
+    
+    if (!applicationsBucketExists) {
+      // Try to create the bucket
+      console.log('Attempting to create applications bucket...');
+      const { error: createError } = await supabase.storage.createBucket('applications', {
+        public: true,
+        fileSizeLimit: 10485760 // 10MB
+      });
+      
+      if (createError) {
+        console.error('Error creating applications bucket:', createError);
+        return false;
+      }
+      
+      console.log('Applications bucket created successfully');
+      return true;
+    }
+    
+    // If bucket exists, check if we can access it
+    const { data: files, error: filesError } = await supabase.storage
+      .from('applications')
+      .list();
+      
+    if (filesError) {
+      console.error('Error accessing applications bucket:', filesError);
+      
+      // Retry logic for file listing
+      if (retryCount < MAX_RETRIES) {
+        console.log(`Retrying in ${(retryCount + 1) * 1000}ms...`);
+        await new Promise(resolve => setTimeout(resolve, (retryCount + 1) * 1000));
+        return createApplicationsBucketIfNotExists(retryCount + 1);
+      }
+      
+      return false;
+    }
+    
+    console.log('Successfully accessed applications bucket');
+    return true;
+  } catch (error) {
+    console.error('Unhandled error checking applications bucket:', error);
+    
+    // Retry logic for unhandled errors
+    if (retryCount < MAX_RETRIES) {
+      console.log(`Retrying after error in ${(retryCount + 1) * 1000}ms...`);
+      await new Promise(resolve => setTimeout(resolve, (retryCount + 1) * 1000));
+      return createApplicationsBucketIfNotExists(retryCount + 1);
+    }
+    
+    return false;
+  }
+};
+
 // Function to check if the applications bucket exists with retry mechanism
 export const checkApplicationsBucket = async (retryCount = 0): Promise<boolean> => {
   try {
@@ -106,7 +182,12 @@ export const getUserRole = async (): Promise<UserRole> => {
         return 'admin';
       }
       
-      // Additional check against stored admin users in the database could be added here
+      // Check if the user is an admin based on predefined admin credentials in AdminAuth.tsx
+      // (This is a fallback mechanism)
+      if (userEmail === 'W@example.com') {
+        console.log('Admin role assigned based on predefined credentials');
+        return 'admin';
+      }
     }
     
     // Default role
@@ -117,3 +198,16 @@ export const getUserRole = async (): Promise<UserRole> => {
     return 'user'; // Default to regular user on error
   }
 };
+
+// Initialize bucket on application startup
+createApplicationsBucketIfNotExists()
+  .then(success => {
+    if (success) {
+      console.log('Applications bucket is ready for use');
+    } else {
+      console.error('Failed to ensure applications bucket exists. File uploads may not work.');
+    }
+  })
+  .catch(error => {
+    console.error('Error during bucket initialization:', error);
+  });

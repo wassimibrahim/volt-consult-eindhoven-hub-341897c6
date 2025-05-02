@@ -4,7 +4,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { LockKeyhole, AlertCircle } from 'lucide-react';
+import { LockKeyhole, AlertCircle, Loader2 } from 'lucide-react';
 import { login, logout } from '../services/supabaseService';
 import { supabase, getUserRole, UserRole } from '@/integrations/supabase/client';
 
@@ -177,6 +177,9 @@ const AdminAuth = ({ children }: AdminAuthProps) => {
         title: "Logged out",
         description: "You have been logged out of the admin area.",
       });
+      
+      // Redirect to home page
+      navigate('/');
     } catch (error) {
       console.error('Error logging out:', error);
       toast({
@@ -194,7 +197,7 @@ const AdminAuth = ({ children }: AdminAuthProps) => {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-700 mx-auto"></div>
+          <Loader2 className="h-12 w-12 animate-spin text-gray-700 mx-auto" />
           <p className="mt-4 text-gray-600">Loading admin panel...</p>
         </div>
       </div>
@@ -207,6 +210,7 @@ const AdminAuth = ({ children }: AdminAuthProps) => {
         <div className="bg-gray-100 p-4 mb-6 rounded-lg flex justify-between items-center">
           <p className="font-medium">Admin Dashboard</p>
           <Button variant="outline" onClick={handleLogout} disabled={isLoading}>
+            {isLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
             {isLoading ? 'Processing...' : 'Logout'}
           </Button>
         </div>
@@ -273,6 +277,7 @@ const AdminAuth = ({ children }: AdminAuthProps) => {
             </div>
             
             <Button type="submit" className="w-full" disabled={isLoading}>
+              {isLoading && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
               {isLoading ? 'Logging in...' : 'Login'}
             </Button>
           </form>
