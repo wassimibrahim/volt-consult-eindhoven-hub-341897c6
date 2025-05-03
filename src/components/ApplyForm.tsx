@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Input } from '@/components/ui/input';
@@ -43,21 +42,22 @@ const ApplyForm: React.FC<ApplyFormProps> = ({ positionTitle, applicationType })
   useEffect(() => {
     const initializeBucket = async () => {
       try {
+        console.log('Starting bucket initialization check...');
         setRetryingBucketCheck(true);
         
         // First try to create the bucket if it doesn't exist
         const created = await createApplicationsBucketIfNotExists();
         if (created) {
-          console.log('Bucket created or already exists and is accessible');
+          console.log('✅ Bucket created or already exists and is accessible');
           setBucketReady(true);
           setBucketChecked(true);
           setRetryingBucketCheck(false);
           return;
         }
         
-        // If creation failed or we don't have permissions, check if it's at least accessible
+        // If creation failed, do one final check to see if it's accessible
         const isReady = await checkApplicationsBucket();
-        console.log('Bucket ready status:', isReady);
+        console.log('Final bucket ready status check:', isReady);
         setBucketReady(isReady);
         setBucketChecked(true);
         setRetryingBucketCheck(false);
@@ -65,16 +65,18 @@ const ApplyForm: React.FC<ApplyFormProps> = ({ positionTitle, applicationType })
         if (!isReady) {
           toast({
             title: "Storage Service Issue",
-            description: "There was a problem connecting to our file storage. Please try again in a moment.",
+            description: "There was a problem connecting to our file storage. Please try again later or contact support.",
             variant: "destructive",
           });
+        } else {
+          console.log('✅ Bucket is ready after final check');
         }
       } catch (error) {
-        console.error('Error checking bucket:', error);
+        console.error('Error during bucket initialization:', error);
         setBucketReady(false);
         setBucketChecked(true);
         setRetryingBucketCheck(false);
-        setFileError('There was an issue connecting to the storage service. Please try again later.');
+        setFileError('There was an issue connecting to the storage service. Please try again later or contact support.');
         
         toast({
           title: "Connection Error",
@@ -133,10 +135,10 @@ const ApplyForm: React.FC<ApplyFormProps> = ({ positionTitle, applicationType })
       console.log(`Uploading file: ${file.name} to path: ${filePath}`);
       setUploadingFiles(true);
       
-      // Double check that the bucket exists and is ready before uploading
+      // Verify bucket access before attempting upload
       const bucketStatus = await checkApplicationsBucket();
       if (!bucketStatus) {
-        throw new Error('Storage is not available at this time. Please try again later.');
+        throw new Error('Storage service is not available. Please try again later.');
       }
       
       // Upload the file to Supabase Storage
@@ -148,7 +150,7 @@ const ApplyForm: React.FC<ApplyFormProps> = ({ positionTitle, applicationType })
         });
       
       if (error) {
-        console.error('Error during upload:', error);
+        console.error('Error during file upload:', error);
         throw new Error(`File upload failed: ${error.message}`);
       }
       
@@ -183,10 +185,11 @@ const ApplyForm: React.FC<ApplyFormProps> = ({ positionTitle, applicationType })
     setFileError(null);
     
     try {
+      console.log('Retrying bucket check and initialization...');
       // First try to create the bucket if it doesn't exist
       const created = await createApplicationsBucketIfNotExists();
       if (created) {
-        console.log('Bucket created or already exists and is accessible');
+        console.log('✅ Bucket created or already exists and is accessible after retry');
         setBucketReady(true);
         setBucketChecked(true);
         setRetryingBucketCheck(false);
@@ -202,7 +205,7 @@ const ApplyForm: React.FC<ApplyFormProps> = ({ positionTitle, applicationType })
       
       // If creation failed, check if it's at least accessible
       const isReady = await checkApplicationsBucket();
-      console.log('Retry bucket check result:', isReady);
+      console.log('Bucket access check after retry:', isReady);
       setBucketReady(isReady);
       setBucketChecked(true);
       
@@ -215,7 +218,7 @@ const ApplyForm: React.FC<ApplyFormProps> = ({ positionTitle, applicationType })
       } else {
         toast({
           title: "Still Unavailable",
-          description: "Storage service is still unavailable. Please try again later.",
+          description: "Storage service is still unavailable. Please try again later or contact support.",
           variant: "destructive",
         });
       }
@@ -241,21 +244,18 @@ const ApplyForm: React.FC<ApplyFormProps> = ({ positionTitle, applicationType })
         throw new Error('Both CV and Motivation Letter files are required');
       }
 
-      // Check if bucket is ready before proceeding
+      // Verify bucket is ready before proceeding
       if (!bucketReady) {
-        // Try to ensure bucket one more time
-        const created = await createApplicationsBucketIfNotExists();
-        if (!created) {
-          const bucketStatus = await checkApplicationsBucket();
-          if (!bucketStatus) {
-            throw new Error('Storage service is currently unavailable. Please try again later.');
-          }
+        // Try one more time to ensure bucket is accessible
+        const bucketStatus = await createApplicationsBucketIfNotExists();
+        if (!bucketStatus) {
+          throw new Error('Storage service is currently unavailable. Please try again later.');
         } else {
           setBucketReady(true);
         }
       }
 
-      console.log('Starting application process...');
+      console.log('Starting application submission process...');
       setUploadProgress(20);
       
       // Upload files to Supabase Storage
@@ -274,9 +274,7 @@ const ApplyForm: React.FC<ApplyFormProps> = ({ positionTitle, applicationType })
       const motivationLetterUrl = await uploadFileToSupabase(formData.motivationLetter, motivationLetterFilePath);
       setUploadProgress(70);
       
-      console.log('Files uploaded successfully:');
-      console.log('CV URL:', cvUrl);
-      console.log('Motivation Letter URL:', motivationLetterUrl);
+      console.log('Files uploaded successfully');
       
       // Create application object
       const fullName = `${formData.firstName} ${formData.familyName}`;
@@ -304,18 +302,18 @@ const ApplyForm: React.FC<ApplyFormProps> = ({ positionTitle, applicationType })
       
       setUploadProgress(80);
       
-      console.log('Saving application data:', newApplication);
+      console.log('Saving application data to database...');
       // Save application using service
       const savedApplication = await saveApplication(newApplication);
-      console.log('Application saved successfully:', savedApplication);
+      console.log('Application saved successfully with ID:', savedApplication.id);
       
       setUploadProgress(100);
       setSubmissionSuccess(true);
       
       // Show success message
       toast({
-        title: "Application Submitted",
-        description: "Your application has been submitted successfully! You will be redirected to the homepage.",
+        title: "Application Submitted Successfully",
+        description: "Thank you for your application! You will be redirected to the homepage.",
         variant: "default",
       });
       
@@ -326,7 +324,7 @@ const ApplyForm: React.FC<ApplyFormProps> = ({ positionTitle, applicationType })
       
       // Display appropriate error message
       toast({
-        title: "Error",
+        title: "Error Submitting Application",
         description: error.message || "There was an error submitting your application. Please try again.",
         variant: "destructive",
       });
@@ -416,7 +414,8 @@ const ApplyForm: React.FC<ApplyFormProps> = ({ positionTitle, applicationType })
       </div>
     );
   }
-
+  
+  // Main form
   return (
     <form onSubmit={handleSubmit} className="space-y-6 bg-white p-8 rounded-xl shadow-md border border-gray-100">
       {fileError && (

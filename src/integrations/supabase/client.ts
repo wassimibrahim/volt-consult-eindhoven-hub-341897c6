@@ -18,9 +18,13 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
 });
 
 // Maximum retries for bucket operations
-const MAX_RETRIES = 3;
+const MAX_RETRIES = 5;
+const RETRY_DELAY_BASE = 1000; // Base delay in ms
 
-// Function to create applications bucket if it doesn't exist
+/**
+ * Improved function to check if applications bucket exists
+ * This function will try to create the bucket if it doesn't exist
+ */
 export const createApplicationsBucketIfNotExists = async (retryCount = 0): Promise<boolean> => {
   try {
     console.log(`Checking if applications bucket exists (attempt ${retryCount + 1}/${MAX_RETRIES + 1})`);
@@ -31,10 +35,11 @@ export const createApplicationsBucketIfNotExists = async (retryCount = 0): Promi
     if (bucketsError) {
       console.error('Error listing buckets:', bucketsError);
       
-      // Retry logic
+      // Use exponential backoff for retries
       if (retryCount < MAX_RETRIES) {
-        console.log(`Retrying in ${(retryCount + 1) * 1000}ms...`);
-        await new Promise(resolve => setTimeout(resolve, (retryCount + 1) * 1000));
+        const delay = RETRY_DELAY_BASE * Math.pow(2, retryCount);
+        console.log(`Retrying in ${delay}ms...`);
+        await new Promise(resolve => setTimeout(resolve, delay));
         return createApplicationsBucketIfNotExists(retryCount + 1);
       }
       
@@ -55,6 +60,11 @@ export const createApplicationsBucketIfNotExists = async (retryCount = 0): Promi
       
       if (createError) {
         console.error('Error creating applications bucket:', createError);
+        // If we get a 400 error, the bucket might already exist despite not showing in our list
+        if (createError.code === '400' || createError.message?.includes('already exists')) {
+          console.log('Bucket might already exist. Attempting to access it...');
+          return checkApplicationsBucketAccess();
+        }
         return false;
       }
       
@@ -63,6 +73,29 @@ export const createApplicationsBucketIfNotExists = async (retryCount = 0): Promi
     }
     
     // If bucket exists, check if we can access it
+    return checkApplicationsBucketAccess();
+    
+  } catch (error) {
+    console.error('Unhandled error checking applications bucket:', error);
+    
+    // Use exponential backoff for retries
+    if (retryCount < MAX_RETRIES) {
+      const delay = RETRY_DELAY_BASE * Math.pow(2, retryCount);
+      console.log(`Retrying after error in ${delay}ms...`);
+      await new Promise(resolve => setTimeout(resolve, delay));
+      return createApplicationsBucketIfNotExists(retryCount + 1);
+    }
+    
+    return false;
+  }
+};
+
+/**
+ * Helper function to verify bucket access by trying to list files
+ */
+const checkApplicationsBucketAccess = async (retryCount = 0): Promise<boolean> => {
+  try {
+    // Test if we can list files in the bucket
     const { data: files, error: filesError } = await supabase.storage
       .from('applications')
       .list();
@@ -70,11 +103,12 @@ export const createApplicationsBucketIfNotExists = async (retryCount = 0): Promi
     if (filesError) {
       console.error('Error accessing applications bucket:', filesError);
       
-      // Retry logic for file listing
+      // Use exponential backoff for retries
       if (retryCount < MAX_RETRIES) {
-        console.log(`Retrying in ${(retryCount + 1) * 1000}ms...`);
-        await new Promise(resolve => setTimeout(resolve, (retryCount + 1) * 1000));
-        return createApplicationsBucketIfNotExists(retryCount + 1);
+        const delay = RETRY_DELAY_BASE * Math.pow(2, retryCount);
+        console.log(`Retrying bucket access check in ${delay}ms...`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+        return checkApplicationsBucketAccess(retryCount + 1);
       }
       
       return false;
@@ -83,13 +117,14 @@ export const createApplicationsBucketIfNotExists = async (retryCount = 0): Promi
     console.log('Successfully accessed applications bucket');
     return true;
   } catch (error) {
-    console.error('Unhandled error checking applications bucket:', error);
+    console.error('Unhandled error checking bucket access:', error);
     
-    // Retry logic for unhandled errors
+    // Use exponential backoff for retries
     if (retryCount < MAX_RETRIES) {
-      console.log(`Retrying after error in ${(retryCount + 1) * 1000}ms...`);
-      await new Promise(resolve => setTimeout(resolve, (retryCount + 1) * 1000));
-      return createApplicationsBucketIfNotExists(retryCount + 1);
+      const delay = RETRY_DELAY_BASE * Math.pow(2, retryCount);
+      console.log(`Retrying bucket access after error in ${delay}ms...`);
+      await new Promise(resolve => setTimeout(resolve, delay));
+      return checkApplicationsBucketAccess(retryCount + 1);
     }
     
     return false;
@@ -100,59 +135,15 @@ export const createApplicationsBucketIfNotExists = async (retryCount = 0): Promi
 export const checkApplicationsBucket = async (retryCount = 0): Promise<boolean> => {
   try {
     console.log(`Checking if applications bucket is accessible (attempt ${retryCount + 1}/${MAX_RETRIES + 1})`);
-    
-    // First check if we can list the bucket
-    const { data: buckets, error: bucketsError } = await supabase.storage.listBuckets();
-    
-    if (bucketsError) {
-      console.error('Error listing buckets:', bucketsError);
-      
-      // Retry logic
-      if (retryCount < MAX_RETRIES) {
-        console.log(`Retrying in ${(retryCount + 1) * 1000}ms...`);
-        await new Promise(resolve => setTimeout(resolve, (retryCount + 1) * 1000));
-        return checkApplicationsBucket(retryCount + 1);
-      }
-      
-      return false;
-    }
-    
-    // Check if applications bucket exists in the list
-    const applicationsBucketExists = buckets?.some(bucket => bucket.name === 'applications');
-    console.log('Applications bucket exists in list:', applicationsBucketExists);
-    
-    if (!applicationsBucketExists) {
-      console.error('Applications bucket does not exist');
-      return false;
-    }
-    
-    // Attempt to list files in the bucket to verify permissions
-    const { data: files, error: filesError } = await supabase.storage
-      .from('applications')
-      .list();
-      
-    if (filesError) {
-      console.error('Error accessing applications bucket:', filesError);
-      
-      // Retry logic for file listing
-      if (retryCount < MAX_RETRIES) {
-        console.log(`Retrying in ${(retryCount + 1) * 1000}ms...`);
-        await new Promise(resolve => setTimeout(resolve, (retryCount + 1) * 1000));
-        return checkApplicationsBucket(retryCount + 1);
-      }
-      
-      return false;
-    }
-    
-    console.log('Successfully accessed applications bucket');
-    return true;
+    return await checkApplicationsBucketAccess(retryCount);
   } catch (error) {
-    console.error('Unhandled error checking applications bucket:', error);
+    console.error('Error in checkApplicationsBucket:', error);
     
-    // Retry logic for unhandled errors
+    // Use exponential backoff for retries
     if (retryCount < MAX_RETRIES) {
-      console.log(`Retrying after error in ${(retryCount + 1) * 1000}ms...`);
-      await new Promise(resolve => setTimeout(resolve, (retryCount + 1) * 1000));
+      const delay = RETRY_DELAY_BASE * Math.pow(2, retryCount);
+      console.log(`Retrying after error in ${delay}ms...`);
+      await new Promise(resolve => setTimeout(resolve, delay));
       return checkApplicationsBucket(retryCount + 1);
     }
     
