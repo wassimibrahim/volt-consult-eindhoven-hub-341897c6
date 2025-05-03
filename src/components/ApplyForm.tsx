@@ -258,25 +258,41 @@ const ApplyForm: React.FC<ApplyFormProps> = ({ positionTitle, applicationType })
       console.log('Starting application submission process...');
       setUploadProgress(20);
       
-      // Upload files to Supabase Storage
+      // Upload files to Supabase Storage with better error handling
       const timestamp = Date.now();
       const safeEmail = formData.email.replace(/[^a-zA-Z0-9]/g, '_');
       
-      // Upload CV
+      // Upload CV with more debug information
       console.log('Uploading CV file...');
-      const cvFilePath = `${safeEmail}/${timestamp}_CV_${formData.cv.name.replace(/[^a-zA-Z0-9._]/g, '_')}`;
-      const cvUrl = await uploadFileToSupabase(formData.cv, cvFilePath);
+      let cvUrl;
+      try {
+        const cvFilePath = `${safeEmail}/${timestamp}_CV_${formData.cv.name.replace(/[^a-zA-Z0-9._]/g, '_')}`;
+        cvUrl = await uploadFileToSupabase(formData.cv, cvFilePath);
+        console.log('CV uploaded successfully:', cvUrl);
+      } catch (error) {
+        console.error('CV upload failed:', error);
+        throw new Error(`CV upload failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      }
+      
       setUploadProgress(50);
       
-      // Upload Motivation Letter
+      // Upload Motivation Letter with more debug information
       console.log('Uploading Motivation Letter file...');
-      const motivationLetterFilePath = `${safeEmail}/${timestamp}_MotivationLetter_${formData.motivationLetter.name.replace(/[^a-zA-Z0-9._]/g, '_')}`;
-      const motivationLetterUrl = await uploadFileToSupabase(formData.motivationLetter, motivationLetterFilePath);
+      let motivationLetterUrl;
+      try {
+        const motivationLetterFilePath = `${safeEmail}/${timestamp}_MotivationLetter_${formData.motivationLetter.name.replace(/[^a-zA-Z0-9._]/g, '_')}`;
+        motivationLetterUrl = await uploadFileToSupabase(formData.motivationLetter, motivationLetterFilePath);
+        console.log('Motivation Letter uploaded successfully:', motivationLetterUrl);
+      } catch (error) {
+        console.error('Motivation Letter upload failed:', error);
+        throw new Error(`Motivation Letter upload failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      }
+      
       setUploadProgress(70);
       
       console.log('Files uploaded successfully');
       
-      // Create application object
+      // Create application object with explicit all required fields
       const fullName = `${formData.firstName} ${formData.familyName}`;
       
       const newApplication = {
@@ -302,23 +318,29 @@ const ApplyForm: React.FC<ApplyFormProps> = ({ positionTitle, applicationType })
       
       setUploadProgress(80);
       
-      console.log('Saving application data to database...');
-      // Save application using service
-      const savedApplication = await saveApplication(newApplication);
-      console.log('Application saved successfully with ID:', savedApplication.id);
+      console.log('Saving application data to database with the following object:', newApplication);
       
-      setUploadProgress(100);
-      setSubmissionSuccess(true);
-      
-      // Show success message
-      toast({
-        title: "Application Submitted Successfully",
-        description: "Thank you for your application! You will be redirected to the homepage.",
-        variant: "default",
-      });
-      
-      // Redirect to home page after short delay
-      setTimeout(() => navigate('/'), 3000);
+      try {
+        // Save application using service
+        const savedApplication = await saveApplication(newApplication);
+        console.log('Application saved successfully with ID:', savedApplication.id);
+        
+        setUploadProgress(100);
+        setSubmissionSuccess(true);
+        
+        // Show success message
+        toast({
+          title: "Application Submitted Successfully",
+          description: "Thank you for your application! You will be redirected to the homepage.",
+          variant: "default",
+        });
+        
+        // Redirect to home page after short delay
+        setTimeout(() => navigate('/'), 3000);
+      } catch (error: any) {
+        console.error('Error from saveApplication function:', error);
+        throw error; // Rethrow to be caught by outer try-catch
+      }
     } catch (error: any) {
       console.error('Error submitting application:', error);
       
