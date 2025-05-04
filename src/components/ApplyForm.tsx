@@ -5,7 +5,7 @@ import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from '@/hooks/use-toast';
 import { saveApplication } from '../services/supabaseService';
-import { supabase, checkApplicationsBucket, createApplicationsBucketIfNotExists } from '@/integrations/supabase/client';
+import { uploadFileToS3, checkS3Configuration } from '../services/s3Service';
 import { AlertCircle, Loader2, CheckCircle } from 'lucide-react';
 
 interface ApplyFormProps {
@@ -33,60 +33,48 @@ const ApplyForm: React.FC<ApplyFormProps> = ({ positionTitle, applicationType })
   const [uploadProgress, setUploadProgress] = useState(0);
   const [fileError, setFileError] = useState<string | null>(null);
   const [uploadingFiles, setUploadingFiles] = useState(false);
-  const [bucketReady, setBucketReady] = useState(false);
-  const [bucketChecked, setBucketChecked] = useState(false);
-  const [retryingBucketCheck, setRetryingBucketCheck] = useState(false);
+  const [s3Ready, setS3Ready] = useState(false);
+  const [s3Checked, setS3Checked] = useState(false);
+  const [retryingS3Check, setRetryingS3Check] = useState(false);
   const [submissionSuccess, setSubmissionSuccess] = useState(false);
 
-  // Check if the applications bucket exists when component mounts
+  // Check if S3 is configured when component mounts
   useEffect(() => {
-    const initializeBucket = async () => {
+    const checkS3 = async () => {
       try {
-        console.log('Starting bucket initialization check...');
-        setRetryingBucketCheck(true);
+        console.log('Checking S3 configuration...');
+        setRetryingS3Check(true);
         
-        // First try to create the bucket if it doesn't exist
-        const created = await createApplicationsBucketIfNotExists();
-        if (created) {
-          console.log('✅ Bucket created or already exists and is accessible');
-          setBucketReady(true);
-          setBucketChecked(true);
-          setRetryingBucketCheck(false);
-          return;
-        }
+        const isConfigured = checkS3Configuration();
+        setS3Ready(isConfigured);
+        setS3Checked(true);
+        setRetryingS3Check(false);
         
-        // If creation failed, do one final check to see if it's accessible
-        const isReady = await checkApplicationsBucket();
-        console.log('Final bucket ready status check:', isReady);
-        setBucketReady(isReady);
-        setBucketChecked(true);
-        setRetryingBucketCheck(false);
-        
-        if (!isReady) {
+        if (!isConfigured) {
           toast({
-            title: "Storage Service Issue",
-            description: "There was a problem connecting to our file storage. Please try again later or contact support.",
+            title: "S3 Storage Configuration Issue",
+            description: "Amazon S3 is not properly configured. Please check your environment variables.",
             variant: "destructive",
           });
         } else {
-          console.log('✅ Bucket is ready after final check');
+          console.log('✅ Amazon S3 is configured and ready');
         }
       } catch (error) {
-        console.error('Error during bucket initialization:', error);
-        setBucketReady(false);
-        setBucketChecked(true);
-        setRetryingBucketCheck(false);
-        setFileError('There was an issue connecting to the storage service. Please try again later or contact support.');
+        console.error('Error checking S3 configuration:', error);
+        setS3Ready(false);
+        setS3Checked(true);
+        setRetryingS3Check(false);
+        setFileError('There was an issue connecting to Amazon S3. Please try again later or contact support.');
         
         toast({
-          title: "Connection Error",
-          description: "Failed to connect to storage service. Please try again later.",
+          title: "S3 Connection Error",
+          description: "Failed to connect to Amazon S3. Please try again later.",
           variant: "destructive",
         });
       }
     };
     
-    initializeBucket();
+    checkS3();
   }, []);
 
   // Clear error message when component unmounts
@@ -130,104 +118,58 @@ const ApplyForm: React.FC<ApplyFormProps> = ({ positionTitle, applicationType })
     setFormData(prev => ({ ...prev, agreeToTerms: checked }));
   };
   
-  const uploadFileToSupabase = async (file: File, filePath: string): Promise<string> => {
+  const uploadFileToAmazonS3 = async (file: File, fileType: string): Promise<string> => {
     try {
-      console.log(`Uploading file: ${file.name} to path: ${filePath}`);
+      console.log(`Uploading ${fileType} file to Amazon S3: ${file.name}`);
       setUploadingFiles(true);
       
-      // Verify bucket access before attempting upload
-      const bucketStatus = await checkApplicationsBucket();
-      if (!bucketStatus) {
-        throw new Error('Storage service is not available. Please try again later.');
-      }
+      // Use a custom folder path for better organization
+      const safeEmail = formData.email.replace(/[^a-zA-Z0-9]/g, '_');
+      const folderPath = `applications/${safeEmail}`;
       
-      // Upload the file to Supabase Storage
-      const { data, error } = await supabase.storage
-        .from('applications')
-        .upload(filePath, file, {
-          cacheControl: '3600',
-          upsert: true
-        });
+      // Upload to S3 and get the URL
+      const fileUrl = await uploadFileToS3(file, folderPath);
+      console.log(`${fileType} uploaded successfully to S3:`, fileUrl);
       
-      if (error) {
-        console.error('Error during file upload:', error);
-        throw new Error(`File upload failed: ${error.message}`);
-      }
-      
-      if (!data) {
-        throw new Error('Upload successful but no data returned');
-      }
-      
-      console.log('Upload successful, getting public URL for:', filePath);
-      
-      // Get the public URL for the uploaded file
-      const { data: publicUrlData } = supabase.storage
-        .from('applications')
-        .getPublicUrl(filePath);
-      
-      if (!publicUrlData || !publicUrlData.publicUrl) {
-        throw new Error('Failed to get public URL for uploaded file');
-      }
-      
-      console.log('Public URL obtained:', publicUrlData.publicUrl);
-      return publicUrlData.publicUrl;
+      return fileUrl;
     } catch (error: any) {
-      console.error('Error in uploadFileToSupabase:', error);
-      throw error;
+      console.error(`Error uploading ${fileType} to S3:`, error);
+      throw new Error(`${fileType} upload failed: ${error.message || 'Unknown error'}`);
     } finally {
       setUploadingFiles(false);
     }
   };
 
-  const handleRetryBucketCheck = async () => {
-    setRetryingBucketCheck(true);
-    setBucketChecked(false);
+  const handleRetryS3Check = async () => {
+    setRetryingS3Check(true);
+    setS3Checked(false);
     setFileError(null);
     
     try {
-      console.log('Retrying bucket check and initialization...');
-      // First try to create the bucket if it doesn't exist
-      const created = await createApplicationsBucketIfNotExists();
-      if (created) {
-        console.log('✅ Bucket created or already exists and is accessible after retry');
-        setBucketReady(true);
-        setBucketChecked(true);
-        setRetryingBucketCheck(false);
-        
+      console.log('Retrying S3 configuration check...');
+      const isConfigured = checkS3Configuration();
+      setS3Ready(isConfigured);
+      setS3Checked(true);
+      
+      if (isConfigured) {
         toast({
           title: "Connection Restored",
-          description: "Storage service is now available. You can proceed with your application.",
-          variant: "default",
-        });
-        
-        return;
-      }
-      
-      // If creation failed, check if it's at least accessible
-      const isReady = await checkApplicationsBucket();
-      console.log('Bucket access check after retry:', isReady);
-      setBucketReady(isReady);
-      setBucketChecked(true);
-      
-      if (isReady) {
-        toast({
-          title: "Connection Restored",
-          description: "Storage service is now available. You can proceed with your application.",
+          description: "Amazon S3 storage service is now available. You can proceed with your application.",
           variant: "default",
         });
       } else {
         toast({
           title: "Still Unavailable",
-          description: "Storage service is still unavailable. Please try again later or contact support.",
+          description: "Amazon S3 is still not properly configured. Please check your environment variables.",
           variant: "destructive",
         });
       }
     } catch (error) {
-      console.error('Error retrying bucket check:', error);
-      setBucketReady(false);
-      setFileError('Connection to storage service failed. Please try again later.');
+      console.error('Error retrying S3 check:', error);
+      setS3Ready(false);
+      setFileError('Connection to Amazon S3 failed. Please try again later.');
     } finally {
-      setRetryingBucketCheck(false);
+      setRetryingS3Check(false);
     }
   };
 
@@ -244,31 +186,19 @@ const ApplyForm: React.FC<ApplyFormProps> = ({ positionTitle, applicationType })
         throw new Error('Both CV and Motivation Letter files are required');
       }
 
-      // Verify bucket is ready before proceeding
-      if (!bucketReady) {
-        // Try one more time to ensure bucket is accessible
-        const bucketStatus = await createApplicationsBucketIfNotExists();
-        if (!bucketStatus) {
-          throw new Error('Storage service is currently unavailable. Please try again later.');
-        } else {
-          setBucketReady(true);
-        }
+      // Verify S3 is ready before proceeding
+      if (!s3Ready) {
+        throw new Error('Amazon S3 storage service is not available. Please try again later.');
       }
 
       console.log('Starting application submission process...');
       setUploadProgress(20);
       
-      // Upload files to Supabase Storage with better error handling
-      const timestamp = Date.now();
-      const safeEmail = formData.email.replace(/[^a-zA-Z0-9]/g, '_');
-      
-      // Upload CV with more debug information
+      // Upload files to Amazon S3
       console.log('Uploading CV file...');
       let cvUrl;
       try {
-        const cvFilePath = `${safeEmail}/${timestamp}_CV_${formData.cv.name.replace(/[^a-zA-Z0-9._]/g, '_')}`;
-        cvUrl = await uploadFileToSupabase(formData.cv, cvFilePath);
-        console.log('CV uploaded successfully:', cvUrl);
+        cvUrl = await uploadFileToAmazonS3(formData.cv, 'CV');
       } catch (error) {
         console.error('CV upload failed:', error);
         throw new Error(`CV upload failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -276,13 +206,10 @@ const ApplyForm: React.FC<ApplyFormProps> = ({ positionTitle, applicationType })
       
       setUploadProgress(50);
       
-      // Upload Motivation Letter with more debug information
       console.log('Uploading Motivation Letter file...');
       let motivationLetterUrl;
       try {
-        const motivationLetterFilePath = `${safeEmail}/${timestamp}_MotivationLetter_${formData.motivationLetter.name.replace(/[^a-zA-Z0-9._]/g, '_')}`;
-        motivationLetterUrl = await uploadFileToSupabase(formData.motivationLetter, motivationLetterFilePath);
-        console.log('Motivation Letter uploaded successfully:', motivationLetterUrl);
+        motivationLetterUrl = await uploadFileToAmazonS3(formData.motivationLetter, 'Motivation Letter');
       } catch (error) {
         console.error('Motivation Letter upload failed:', error);
         throw new Error(`Motivation Letter upload failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -290,7 +217,7 @@ const ApplyForm: React.FC<ApplyFormProps> = ({ positionTitle, applicationType })
       
       setUploadProgress(70);
       
-      console.log('Files uploaded successfully');
+      console.log('Files uploaded successfully to Amazon S3');
       
       // Create application object with explicit all required fields
       const fullName = `${formData.firstName} ${formData.familyName}`;
@@ -402,24 +329,24 @@ const ApplyForm: React.FC<ApplyFormProps> = ({ positionTitle, applicationType })
     );
   }
 
-  // Show bucket status message if there's an issue
-  if (bucketChecked && !bucketReady) {
+  // Show S3 status message if there's an issue
+  if (s3Checked && !s3Ready) {
     return (
       <div className="space-y-6 bg-white p-8 rounded-xl shadow-md border border-gray-100">
         <div className="bg-red-50 border border-red-200 rounded-md p-4 flex items-start gap-3">
           <AlertCircle className="w-5 h-5 text-red-500 mt-0.5 flex-shrink-0" />
           <div>
-            <p className="text-red-700 font-medium">Storage Service Unavailable</p>
+            <p className="text-red-700 font-medium">Amazon S3 Storage Service Unavailable</p>
             <p className="text-red-600 text-sm mt-1">
-              We're currently experiencing issues with our file storage system. Please try again later.
+              We're currently experiencing issues with our Amazon S3 storage system. Please check your environment variables or try again later.
             </p>
             <button 
-              onClick={handleRetryBucketCheck}
-              disabled={retryingBucketCheck}
+              onClick={handleRetryS3Check}
+              disabled={retryingS3Check}
               className="mt-3 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 text-sm flex items-center gap-2 disabled:opacity-70"
             >
-              {retryingBucketCheck && <Loader2 className="w-4 h-4 animate-spin" />}
-              {retryingBucketCheck ? 'Checking...' : 'Retry'}
+              {retryingS3Check && <Loader2 className="w-4 h-4 animate-spin" />}
+              {retryingS3Check ? 'Checking...' : 'Retry'}
             </button>
           </div>
         </div>
@@ -427,12 +354,12 @@ const ApplyForm: React.FC<ApplyFormProps> = ({ positionTitle, applicationType })
     );
   }
 
-  // Show loading indicator while bucket check is in progress
-  if (!bucketChecked) {
+  // Show loading indicator while S3 check is in progress
+  if (!s3Checked) {
     return (
       <div className="space-y-6 bg-white p-8 rounded-xl shadow-md border border-gray-100 flex flex-col items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-gray-500" />
-        <p className="text-gray-600">Checking storage service availability...</p>
+        <p className="text-gray-600">Checking Amazon S3 storage service availability...</p>
       </div>
     );
   }
@@ -648,7 +575,7 @@ const ApplyForm: React.FC<ApplyFormProps> = ({ positionTitle, applicationType })
       <button
         type="submit"
         className="w-full bg-[#F00000] text-white py-3 rounded-md hover:bg-[#F00000]/90 font-medium disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-        disabled={submitting || !formData.agreeToTerms || !bucketReady}
+        disabled={submitting || !formData.agreeToTerms || !s3Ready}
       >
         {submitting && <Loader2 className="w-4 h-4 animate-spin" />}
         {submitting ? 'Submitting...' : 'Submit Application'}
