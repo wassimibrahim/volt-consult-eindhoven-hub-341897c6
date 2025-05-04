@@ -1,6 +1,10 @@
 
 import AWS from 'aws-sdk';
-import { v4 as uuidv4 } from 'uuid';
+
+// Polyfill global for AWS SDK
+if (typeof window !== 'undefined' && !window.global) {
+  (window as any).global = window;
+}
 
 // AWS S3 Configuration
 const s3Config = {
@@ -29,7 +33,7 @@ export const uploadFileToS3 = async (file: File, directory: string = 'applicatio
     const timestamp = Date.now();
     const fileExtension = file.name.split('.').pop();
     const safeFilename = file.name.replace(/[^a-zA-Z0-9._]/g, '_');
-    const uniqueFilePath = `${directory}/${timestamp}-${uuidv4()}-${safeFilename}`;
+    const uniqueFilePath = `${directory}/${timestamp}-${safeFilename}`;
 
     console.log(`Starting S3 upload for file: ${uniqueFilePath}`);
 
