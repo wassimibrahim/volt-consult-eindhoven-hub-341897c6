@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -321,7 +320,7 @@ export const saveApplication = async (application: {
       throw new Error('Email is required');
     }
 
-    // Extract CV and motivation letter URLs from documentData if provided
+    // Extract CV and motivation letter from documentData if provided
     const cvUrl = application.documentData?.[0] || null;
     const motivationLetterUrl = application.documentData?.[1] || null;
     
