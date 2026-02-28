@@ -105,7 +105,7 @@ const ContactSection = () => {
               <div className="space-y-3">
                 <div className="flex justify-between items-center py-2 border-b border-volt-red/10">
                   <span className="font-medium">Recruitment Cycle Opens</span>
-                  <span className="text-volt-red">June 01, 2025</span>
+                  <span className="text-volt-red">April 01, 2026</span>
                 </div>
               </div>
             </div>
