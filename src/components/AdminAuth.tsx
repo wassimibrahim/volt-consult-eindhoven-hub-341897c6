@@ -86,11 +86,27 @@ const AdminAuth = ({ children }: AdminAuthProps) => {
     };
   }, [navigate, toast]);
 
+  const [isSignUp, setIsSignUp] = useState(false);
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     
     try {
+      if (isSignUp) {
+        // Sign up new account
+        const { data, error } = await supabase.auth.signUp({ email, password });
+        if (error) throw error;
+        
+        toast({
+          title: "Account Created",
+          description: "Account created successfully. An admin must assign you the admin role before you can access the dashboard.",
+        });
+        setIsSignUp(false);
+        setPassword('');
+        return;
+      }
+
       // Authenticate via Supabase Auth only
       await login(email, password);
       
@@ -121,7 +137,7 @@ const AdminAuth = ({ children }: AdminAuthProps) => {
     } catch (error: any) {
       console.error('Authentication error:', error);
       toast({
-        title: "Access Denied",
+        title: "Error",
         description: error.message || "Incorrect email or password. Please try again.",
         variant: "destructive",
       });
