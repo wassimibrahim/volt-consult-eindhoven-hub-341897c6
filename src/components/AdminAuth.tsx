@@ -137,14 +137,12 @@ const AdminAuth = ({ children }: AdminAuthProps) => {
       await logout();
       setIsAuthenticated(false);
       setIsAdmin(false);
-      localStorage.removeItem('adminAuthenticated');
       
       toast({
         title: "Logged out",
         description: "You have been logged out of the admin area.",
       });
       
-      // Redirect to home page
       navigate('/');
     } catch (error) {
       console.error('Error logging out:', error);
