@@ -91,58 +91,38 @@ const AdminAuth = ({ children }: AdminAuthProps) => {
     setIsLoading(true);
     
     try {
-      // Check against required admin credentials
-      if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
+      // Authenticate via Supabase Auth only
+      await login(email, password);
+      
+      // Get session to check admin role server-side
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (!sessionData.session) {
+        throw new Error('Authentication failed');
+      }
+      
+      const hasAdminAccess = await checkAdminRole(sessionData.session.user.id);
+      
+      if (hasAdminAccess) {
         setIsAuthenticated(true);
         setIsAdmin(true);
-        localStorage.setItem('adminAuthenticated', 'true');
         toast({
           title: "Success",
           description: "You have successfully logged in as admin.",
         });
-        return;
-      }
-      
-      // If credentials don't match, try Supabase auth (if email is provided)
-      if (username.includes('@')) {
-        try {
-          // Try to log in with Supabase
-          await login(username, password);
-          
-          // Check if the user has admin role
-          const userRole = await getUserRole();
-          const hasAdminAccess = userRole === 'admin';
-          
-          if (hasAdminAccess) {
-            setIsAdmin(true);
-            localStorage.setItem('adminAuthenticated', 'true');
-            toast({
-              title: "Success",
-              description: "You have successfully logged in as admin.",
-            });
-          } else {
-            toast({
-              title: "Access Denied",
-              description: "Your account doesn't have admin privileges.",
-              variant: "destructive",
-            });
-            // Sign out non-admin users
-            await logout();
-            setIsAuthenticated(false);
-          }
-        } catch (loginError: any) {
-          console.error('Login error:', loginError);
-          throw new Error(loginError.message || 'Invalid credentials');
-        }
       } else {
-        // If username doesn't contain @ and doesn't match admin credentials
-        throw new Error('Invalid username or password. Please try again.');
+        toast({
+          title: "Access Denied",
+          description: "Your account doesn't have admin privileges.",
+          variant: "destructive",
+        });
+        await logout();
+        setIsAuthenticated(false);
       }
     } catch (error: any) {
       console.error('Authentication error:', error);
       toast({
         title: "Access Denied",
-        description: error.message || "Incorrect username or password. Please try again.",
+        description: error.message || "Incorrect email or password. Please try again.",
         variant: "destructive",
       });
       setPassword('');
