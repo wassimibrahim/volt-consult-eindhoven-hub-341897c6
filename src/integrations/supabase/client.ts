@@ -51,10 +51,9 @@ export const createApplicationsBucketIfNotExists = async (retryCount = 0): Promi
     console.log('Applications bucket exists in list:', applicationsBucketExists);
     
     if (!applicationsBucketExists) {
-      // Try to create the bucket
       console.log('Attempting to create applications bucket...');
       const { error: createError } = await supabase.storage.createBucket('applications', {
-        public: true,
+        public: false,
         fileSizeLimit: 10485760 // 10MB
       });
       
