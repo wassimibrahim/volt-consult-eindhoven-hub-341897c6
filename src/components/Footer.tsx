@@ -73,7 +73,7 @@ const Footer = () => {
             <ul className="space-y-4">
               <li className="border-b border-white/10 pb-2">
                 <p className="font-medium">Recruitment Cycle Opens</p>
-                <p className="text-white/70 text-sm">June 01, 2025</p>
+                <p className="text-white/70 text-sm">April 01, 2026</p>
               </li>
             </ul>
           </div>
@@ -83,8 +83,8 @@ const Footer = () => {
             <ul className="space-y-3 text-white/70">
               <li>
                 <strong className="text-white">Email:</strong>{" "}
-                <a href="mailto:eindhoven@voltconsultingroup.com" className="hover:text-white transition-colors">
-                  eindhoven@voltconsultingroup.com
+                <a href="mailto:info@voltcg.nl" className="hover:text-white transition-colors">
+                  info@voltcg.nl
                 </a>
               </li>
               <li>

@@ -86,11 +86,27 @@ const AdminAuth = ({ children }: AdminAuthProps) => {
     };
   }, [navigate, toast]);
 
+  const [isSignUp, setIsSignUp] = useState(false);
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     
     try {
+      if (isSignUp) {
+        // Sign up new account
+        const { data, error } = await supabase.auth.signUp({ email, password });
+        if (error) throw error;
+        
+        toast({
+          title: "Account Created",
+          description: "Account created successfully. An admin must assign you the admin role before you can access the dashboard.",
+        });
+        setIsSignUp(false);
+        setPassword('');
+        return;
+      }
+
       // Authenticate via Supabase Auth only
       await login(email, password);
       
@@ -121,7 +137,7 @@ const AdminAuth = ({ children }: AdminAuthProps) => {
     } catch (error: any) {
       console.error('Authentication error:', error);
       toast({
-        title: "Access Denied",
+        title: "Error",
         description: error.message || "Incorrect email or password. Please try again.",
         variant: "destructive",
       });
@@ -193,7 +209,7 @@ const AdminAuth = ({ children }: AdminAuthProps) => {
             </div>
           </div>
           
-          <h1 className="text-2xl font-bold text-center mb-6">Admin Access</h1>
+          <h1 className="text-2xl font-bold text-center mb-6">{isSignUp ? 'Create Account' : 'Admin Access'}</h1>
           
           {isAuthenticated && !isAdmin && (
             <div className="mb-6 bg-yellow-50 border border-yellow-200 rounded-md p-4 flex items-start gap-3">
@@ -242,12 +258,19 @@ const AdminAuth = ({ children }: AdminAuthProps) => {
             
             <Button type="submit" className="w-full" disabled={isLoading}>
               {isLoading && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
-              {isLoading ? 'Logging in...' : 'Login'}
+              {isLoading ? (isSignUp ? 'Creating account...' : 'Logging in...') : (isSignUp ? 'Create Account' : 'Login')}
             </Button>
           </form>
           
-          <div className="mt-4 text-center">
-            <Link to="/" className="text-sm text-blue-600 hover:underline">
+          <div className="mt-4 text-center space-y-2">
+            <button
+              type="button"
+              onClick={() => { setIsSignUp(!isSignUp); setPassword(''); }}
+              className="text-sm text-blue-600 hover:underline block mx-auto"
+            >
+              {isSignUp ? 'Already have an account? Login' : 'Need an account? Sign Up'}
+            </button>
+            <Link to="/" className="text-sm text-blue-600 hover:underline block">
               Return to Homepage
             </Link>
           </div>
