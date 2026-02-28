@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { Mail, MapPin, Phone } from 'lucide-react';
+import { saveContactMessage } from '../services/supabaseService';
+import { useToast } from '@/hooks/use-toast';
 
 const ContactSection = () => {
   const [formData, setFormData] = useState({
@@ -8,27 +10,45 @@ const ContactSection = () => {
     organization: '',
     message: ''
   });
+  const [submitting, setSubmitting] = useState(false);
+  const { toast } = useToast();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Form submitted:', formData);
-    // Here you would normally send the data to your server or API
-    
-    // Reset form
-    setFormData({
-      name: '',
-      email: '',
-      organization: '',
-      message: ''
-    });
-    
-    // Show success message
-    alert('Your message has been sent! We will get back to you soon.');
+    setSubmitting(true);
+
+    try {
+      await saveContactMessage({
+        name: formData.name,
+        email: formData.email,
+        message: formData.message
+      });
+
+      toast({
+        title: "Message Sent",
+        description: "Thank you! We'll get back to you soon.",
+      });
+
+      setFormData({
+        name: '',
+        email: '',
+        organization: '',
+        message: ''
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to send message. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
