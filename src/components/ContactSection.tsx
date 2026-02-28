@@ -75,7 +75,7 @@ const ContactSection = () => {
                 </div>
                 <div>
                   <h3 className="font-semibold mb-1">Email</h3>
-                  <p className="text-volt-text/80">eindhoven@voltconsultingroup.com</p>
+                  <p className="text-volt-text/80">info@voltcg.nl</p>
                 </div>
               </div>
               
