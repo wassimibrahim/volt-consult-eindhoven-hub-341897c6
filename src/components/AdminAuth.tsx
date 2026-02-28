@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { LockKeyhole, AlertCircle, Loader2 } from 'lucide-react';
 import { login, logout } from '../services/supabaseService';
-import { supabase, getUserRole, UserRole } from '@/integrations/supabase/client';
+import { supabase } from '@/integrations/supabase/client';
 
 interface AdminAuthProps {
   children: React.ReactNode;
@@ -14,17 +14,13 @@ interface AdminAuthProps {
 
 const AdminAuth = ({ children }: AdminAuthProps) => {
   const navigate = useNavigate();
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [authChecked, setAuthChecked] = useState(false);
   const { toast } = useToast();
-
-  // Required admin credentials
-  const ADMIN_USERNAME = 'W';
-  const ADMIN_PASSWORD = 'VCGEindhovenLebanon10452*';
 
   useEffect(() => {
     // Check if user is already authenticated
