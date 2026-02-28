@@ -182,8 +182,9 @@ const ContactSection = () => {
                 <button
                   type="submit"
                   className="button-primary w-full"
+                  disabled={submitting}
                 >
-                  Send Message
+                  {submitting ? 'Sending...' : 'Send Message'}
                 </button>
               </form>
             </div>
