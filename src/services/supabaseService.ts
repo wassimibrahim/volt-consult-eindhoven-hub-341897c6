@@ -68,9 +68,10 @@ export const isAuthenticated = async () => {
   return !!data.session;
 };
 
-// This function is kept for backwards compatibility but not used directly anymore
-export const verifyAdminPassword = async (password: string) => {
-  return password === 'VCGEindhovenLebanon10452*';
+// Admin verification is now handled server-side via user_roles table and RLS policies
+export const verifyAdminPassword = async (_password: string) => {
+  console.warn('verifyAdminPassword is deprecated. Use Supabase Auth with user_roles table instead.');
+  return false;
 };
 
 // Positions

@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { LockKeyhole, AlertCircle, Loader2 } from 'lucide-react';
 import { login, logout } from '../services/supabaseService';
-import { supabase, getUserRole, UserRole } from '@/integrations/supabase/client';
+import { supabase } from '@/integrations/supabase/client';
 
 interface AdminAuthProps {
   children: React.ReactNode;
@@ -14,7 +14,7 @@ interface AdminAuthProps {
 
 const AdminAuth = ({ children }: AdminAuthProps) => {
   const navigate = useNavigate();
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -22,38 +22,35 @@ const AdminAuth = ({ children }: AdminAuthProps) => {
   const [authChecked, setAuthChecked] = useState(false);
   const { toast } = useToast();
 
-  // Required admin credentials
-  const ADMIN_USERNAME = 'W';
-  const ADMIN_PASSWORD = 'VCGEindhovenLebanon10452*';
+  // Check admin role server-side via the has_role function
+  const checkAdminRole = async (userId: string): Promise<boolean> => {
+    try {
+      const { data, error } = await supabase.rpc('has_role', {
+        _user_id: userId,
+        _role: 'admin'
+      });
+      if (error) {
+        console.error('Error checking admin role:', error);
+        return false;
+      }
+      return data === true;
+    } catch (error) {
+      console.error('Error checking admin role:', error);
+      return false;
+    }
+  };
 
   useEffect(() => {
-    // Check if user is already authenticated
     const checkAuth = async () => {
       try {
         setIsLoading(true);
-        // Check local storage first for quick access
-        if (localStorage.getItem('adminAuthenticated') === 'true') {
-          setIsAuthenticated(true);
-          setIsAdmin(true);
-          setAuthChecked(true);
-          setIsLoading(false);
-          return;
-        }
-        
-        // Then check Supabase auth session
         const { data } = await supabase.auth.getSession();
         if (data.session) {
-          // Check if the user has admin role
-          const userRole = await getUserRole();
-          const hasAdminAccess = userRole === 'admin';
-          
           setIsAuthenticated(true);
+          const hasAdminAccess = await checkAdminRole(data.session.user.id);
           setIsAdmin(hasAdminAccess);
           
-          if (hasAdminAccess) {
-            localStorage.setItem('adminAuthenticated', 'true');
-          } else {
-            // If authenticated but not admin, show message and redirect
+          if (!hasAdminAccess) {
             toast({
               title: "Access Denied",
               description: "You don't have admin privileges to access this area.",
@@ -64,7 +61,6 @@ const AdminAuth = ({ children }: AdminAuthProps) => {
         }
       } catch (error) {
         console.error("Error checking auth:", error);
-        localStorage.removeItem('adminAuthenticated');
       } finally {
         setAuthChecked(true);
         setIsLoading(false);
@@ -73,24 +69,14 @@ const AdminAuth = ({ children }: AdminAuthProps) => {
     
     checkAuth();
     
-    // Set up auth state change listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       const isAuth = !!session;
       setIsAuthenticated(isAuth);
       
-      if (isAuth) {
-        // Check role on auth state change
-        const userRole = await getUserRole();
-        const hasAdminAccess = userRole === 'admin';
+      if (isAuth && session) {
+        const hasAdminAccess = await checkAdminRole(session.user.id);
         setIsAdmin(hasAdminAccess);
-        
-        if (hasAdminAccess) {
-          localStorage.setItem('adminAuthenticated', 'true');
-        } else {
-          localStorage.removeItem('adminAuthenticated');
-        }
       } else if (event === 'SIGNED_OUT') {
-        localStorage.removeItem('adminAuthenticated');
         setIsAdmin(false);
       }
     });
@@ -105,58 +91,38 @@ const AdminAuth = ({ children }: AdminAuthProps) => {
     setIsLoading(true);
     
     try {
-      // Check against required admin credentials
-      if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
+      // Authenticate via Supabase Auth only
+      await login(email, password);
+      
+      // Get session to check admin role server-side
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (!sessionData.session) {
+        throw new Error('Authentication failed');
+      }
+      
+      const hasAdminAccess = await checkAdminRole(sessionData.session.user.id);
+      
+      if (hasAdminAccess) {
         setIsAuthenticated(true);
         setIsAdmin(true);
-        localStorage.setItem('adminAuthenticated', 'true');
         toast({
           title: "Success",
           description: "You have successfully logged in as admin.",
         });
-        return;
-      }
-      
-      // If credentials don't match, try Supabase auth (if email is provided)
-      if (username.includes('@')) {
-        try {
-          // Try to log in with Supabase
-          await login(username, password);
-          
-          // Check if the user has admin role
-          const userRole = await getUserRole();
-          const hasAdminAccess = userRole === 'admin';
-          
-          if (hasAdminAccess) {
-            setIsAdmin(true);
-            localStorage.setItem('adminAuthenticated', 'true');
-            toast({
-              title: "Success",
-              description: "You have successfully logged in as admin.",
-            });
-          } else {
-            toast({
-              title: "Access Denied",
-              description: "Your account doesn't have admin privileges.",
-              variant: "destructive",
-            });
-            // Sign out non-admin users
-            await logout();
-            setIsAuthenticated(false);
-          }
-        } catch (loginError: any) {
-          console.error('Login error:', loginError);
-          throw new Error(loginError.message || 'Invalid credentials');
-        }
       } else {
-        // If username doesn't contain @ and doesn't match admin credentials
-        throw new Error('Invalid username or password. Please try again.');
+        toast({
+          title: "Access Denied",
+          description: "Your account doesn't have admin privileges.",
+          variant: "destructive",
+        });
+        await logout();
+        setIsAuthenticated(false);
       }
     } catch (error: any) {
       console.error('Authentication error:', error);
       toast({
         title: "Access Denied",
-        description: error.message || "Incorrect username or password. Please try again.",
+        description: error.message || "Incorrect email or password. Please try again.",
         variant: "destructive",
       });
       setPassword('');
@@ -171,14 +137,12 @@ const AdminAuth = ({ children }: AdminAuthProps) => {
       await logout();
       setIsAuthenticated(false);
       setIsAdmin(false);
-      localStorage.removeItem('adminAuthenticated');
       
       toast({
         title: "Logged out",
         description: "You have been logged out of the admin area.",
       });
       
-      // Redirect to home page
       navigate('/');
     } catch (error) {
       console.error('Error logging out:', error);
@@ -245,16 +209,16 @@ const AdminAuth = ({ children }: AdminAuthProps) => {
           
           <form onSubmit={handleLogin}>
             <div className="mb-4">
-              <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-1">
-                Username
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+                Email
               </label>
               <Input
-                id="username"
-                type="text"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 className="w-full"
-                placeholder="Enter username"
+                placeholder="Enter admin email"
                 required
                 disabled={isLoading}
               />
