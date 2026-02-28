@@ -209,16 +209,16 @@ const AdminAuth = ({ children }: AdminAuthProps) => {
           
           <form onSubmit={handleLogin}>
             <div className="mb-4">
-              <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-1">
-                Username
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+                Email
               </label>
               <Input
-                id="username"
-                type="text"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 className="w-full"
-                placeholder="Enter username"
+                placeholder="Enter admin email"
                 required
                 disabled={isLoading}
               />
