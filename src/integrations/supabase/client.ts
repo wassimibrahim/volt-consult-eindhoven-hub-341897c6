@@ -151,42 +151,30 @@ export const checkApplicationsBucket = async (retryCount = 0): Promise<boolean> 
   }
 };
 
-// User roles management
+// User roles management - now uses server-side user_roles table
 export type UserRole = 'user' | 'admin';
 
 export const getUserRole = async (): Promise<UserRole> => {
   try {
-    // Check if the user is logged in
     const { data: sessionData } = await supabase.auth.getSession();
     if (!sessionData.session) {
-      console.log('No active session, defaulting to user role');
       return 'user';
     }
     
-    // Admin check based on specific email domains or predefined admin users
-    const userEmail = sessionData.session.user.email;
+    const { data, error } = await supabase.rpc('has_role', {
+      _user_id: sessionData.session.user.id,
+      _role: 'admin'
+    });
     
-    if (userEmail) {
-      // Admin check based on email
-      if (userEmail.includes('admin@') || userEmail.endsWith('@vcgeindhoven.nl')) {
-        console.log('Admin role assigned based on email');
-        return 'admin';
-      }
-      
-      // Check if the user is an admin based on predefined admin credentials in AdminAuth.tsx
-      // (This is a fallback mechanism)
-      if (userEmail === 'W@example.com') {
-        console.log('Admin role assigned based on predefined credentials');
-        return 'admin';
-      }
+    if (error) {
+      console.error('Error checking user role:', error);
+      return 'user';
     }
     
-    // Default role
-    return 'user';
-    
+    return data === true ? 'admin' : 'user';
   } catch (error) {
     console.error('Error determining user role:', error);
-    return 'user'; // Default to regular user on error
+    return 'user';
   }
 };
 
