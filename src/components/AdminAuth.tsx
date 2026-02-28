@@ -22,34 +22,35 @@ const AdminAuth = ({ children }: AdminAuthProps) => {
   const [authChecked, setAuthChecked] = useState(false);
   const { toast } = useToast();
 
+  // Check admin role server-side via the has_role function
+  const checkAdminRole = async (userId: string): Promise<boolean> => {
+    try {
+      const { data, error } = await supabase.rpc('has_role', {
+        _user_id: userId,
+        _role: 'admin'
+      });
+      if (error) {
+        console.error('Error checking admin role:', error);
+        return false;
+      }
+      return data === true;
+    } catch (error) {
+      console.error('Error checking admin role:', error);
+      return false;
+    }
+  };
+
   useEffect(() => {
-    // Check if user is already authenticated
     const checkAuth = async () => {
       try {
         setIsLoading(true);
-        // Check local storage first for quick access
-        if (localStorage.getItem('adminAuthenticated') === 'true') {
-          setIsAuthenticated(true);
-          setIsAdmin(true);
-          setAuthChecked(true);
-          setIsLoading(false);
-          return;
-        }
-        
-        // Then check Supabase auth session
         const { data } = await supabase.auth.getSession();
         if (data.session) {
-          // Check if the user has admin role
-          const userRole = await getUserRole();
-          const hasAdminAccess = userRole === 'admin';
-          
           setIsAuthenticated(true);
+          const hasAdminAccess = await checkAdminRole(data.session.user.id);
           setIsAdmin(hasAdminAccess);
           
-          if (hasAdminAccess) {
-            localStorage.setItem('adminAuthenticated', 'true');
-          } else {
-            // If authenticated but not admin, show message and redirect
+          if (!hasAdminAccess) {
             toast({
               title: "Access Denied",
               description: "You don't have admin privileges to access this area.",
@@ -60,7 +61,6 @@ const AdminAuth = ({ children }: AdminAuthProps) => {
         }
       } catch (error) {
         console.error("Error checking auth:", error);
-        localStorage.removeItem('adminAuthenticated');
       } finally {
         setAuthChecked(true);
         setIsLoading(false);
@@ -69,24 +69,14 @@ const AdminAuth = ({ children }: AdminAuthProps) => {
     
     checkAuth();
     
-    // Set up auth state change listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       const isAuth = !!session;
       setIsAuthenticated(isAuth);
       
-      if (isAuth) {
-        // Check role on auth state change
-        const userRole = await getUserRole();
-        const hasAdminAccess = userRole === 'admin';
+      if (isAuth && session) {
+        const hasAdminAccess = await checkAdminRole(session.user.id);
         setIsAdmin(hasAdminAccess);
-        
-        if (hasAdminAccess) {
-          localStorage.setItem('adminAuthenticated', 'true');
-        } else {
-          localStorage.removeItem('adminAuthenticated');
-        }
       } else if (event === 'SIGNED_OUT') {
-        localStorage.removeItem('adminAuthenticated');
         setIsAdmin(false);
       }
     });
