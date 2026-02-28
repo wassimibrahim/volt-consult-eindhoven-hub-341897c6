@@ -209,7 +209,7 @@ const AdminAuth = ({ children }: AdminAuthProps) => {
             </div>
           </div>
           
-          <h1 className="text-2xl font-bold text-center mb-6">Admin Access</h1>
+          <h1 className="text-2xl font-bold text-center mb-6">{isSignUp ? 'Create Account' : 'Admin Access'}</h1>
           
           {isAuthenticated && !isAdmin && (
             <div className="mb-6 bg-yellow-50 border border-yellow-200 rounded-md p-4 flex items-start gap-3">
