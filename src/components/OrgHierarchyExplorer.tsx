@@ -168,7 +168,7 @@ const OrgBox = ({
     onClick={() => onClick(roleKey)}
     aria-label={`View details for ${label}`}
     className={cn(
-      "px-5 py-3 rounded-lg text-sm font-medium transition-all duration-200 cursor-pointer select-none whitespace-nowrap",
+      "px-3 py-1.5 rounded-md text-xs font-medium transition-all duration-200 cursor-pointer select-none whitespace-nowrap",
       "border border-secondary/80 shadow-sm",
       isActive
         ? "bg-primary text-primary-foreground shadow-lg scale-105"
@@ -179,7 +179,7 @@ const OrgBox = ({
   </button>
 );
 
-const VerticalLine = ({ height = 32 }: { height?: number }) => (
+const VerticalLine = ({ height = 20 }: { height?: number }) => (
   <div className="flex justify-center">
     <div className="w-px bg-border" style={{ height }} />
   </div>
@@ -281,7 +281,7 @@ const OrgHierarchyExplorer = () => {
   ];
 
   return (
-    <section className="py-8">
+    <section className="py-4">
       <div>
         <div className="text-center mb-10">
           <h3 className="heading-sm text-foreground mb-2">Organizational Hierarchy</h3>
@@ -293,7 +293,7 @@ const OrgHierarchyExplorer = () => {
         <div className="flex flex-col lg:flex-row">
           {/* Chart area */}
           <div className="flex-1 overflow-x-auto">
-            <div className="min-w-[700px] py-4 px-2">
+            <div className="min-w-[600px] py-2 px-2">
               {/* Partners */}
               <div className="flex justify-center">
                 <OrgBox label="Partners" roleKey="partners" isActive={activeRole === 'partners'} onClick={handleClick} />
@@ -310,11 +310,11 @@ const OrgHierarchyExplorer = () => {
               <div className="relative">
                 {/* Horizontal connecting line */}
                 <div className="absolute top-0 left-1/2 -translate-x-1/2 h-px bg-border" style={{ width: '80%', left: '50%', transform: 'translateX(-50%)' }} />
-                <div className="flex justify-center gap-3 pt-4 relative">
+                <div className="flex justify-center gap-2 pt-3 relative">
                   {/* Vertical lines from horizontal bar to each director */}
                   {directors.map((d, i) => (
                     <div key={d.key} className="flex flex-col items-center">
-                      <div className="w-px h-4 bg-border -mt-4" />
+                      <div className="w-px h-3 bg-border -mt-3" />
                       <OrgBox
                         label={d.label.replace('\n', ' ')}
                         roleKey={d.key}
@@ -338,28 +338,28 @@ const OrgHierarchyExplorer = () => {
               {/* Senior Consultants */}
               <div className="relative">
                 <div className="absolute top-0 left-1/2 -translate-x-1/2 h-px bg-border" style={{ width: '30%' }} />
-                <div className="flex justify-center gap-24 pt-4">
+                <div className="flex justify-center gap-16 pt-3">
                   {[0, 1].map(i => (
                     <div key={i} className="flex flex-col items-center">
-                      <div className="w-px h-4 bg-border -mt-4" />
+                      <div className="w-px h-3 bg-border -mt-3" />
                       <OrgBox label="Senior Consultant" roleKey="seniorconsultant" isActive={activeRole === 'seniorconsultant'} onClick={handleClick} />
                     </div>
                   ))}
                 </div>
               </div>
-              <div className="flex justify-center gap-24">
+              <div className="flex justify-center gap-16">
                 {[0, 1].map(i => (
                   <div key={i} className="flex flex-col items-center">
                     <VerticalLine />
                     {/* Consultants under each Senior */}
                     <div className="relative">
                       <div className="absolute top-0 left-1/2 -translate-x-1/2 h-px bg-border" style={{ width: '80%' }} />
-                      <div className="flex gap-4 pt-4">
+                      <div className="flex gap-3 pt-3">
                         {[0, 1].map(j => (
                           <div key={j} className="flex flex-col items-center">
-                            <div className="w-px h-4 bg-border -mt-4" />
+                            <div className="w-px h-3 bg-border -mt-3" />
                             <OrgBox label="Consultant" roleKey="consultant" isActive={activeRole === 'consultant'} onClick={handleClick} />
-                            <VerticalLine height={24} />
+                            <VerticalLine height={16} />
                             <OrgBox label="Visiting Associate (Intern)" roleKey="visitingassociate" isActive={activeRole === 'visitingassociate'} onClick={handleClick} />
                           </div>
                         ))}
