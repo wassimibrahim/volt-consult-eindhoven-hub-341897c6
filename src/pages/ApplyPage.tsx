@@ -216,6 +216,8 @@ const ApplyPage = () => {
                 Explore our available positions and find the one that matches your skills and interests.
               </p>
 
+              <OrgHierarchyExplorer />
+
               <div className="space-y-4">
                 {voltPositions.length > 0 ? (
                   voltPositions.map((position) => (
