@@ -281,15 +281,12 @@ const OrgHierarchyExplorer = () => {
   ];
 
   return (
-    <section className="section-padding bg-background">
-      <div className="container-custom">
-        <div className="text-center mb-12">
-          <span className="inline-block px-4 py-1.5 mb-4 text-sm font-medium bg-primary/10 text-primary rounded-full">
-            Our Structure
-          </span>
-          <h2 className="heading-lg text-foreground mb-4">Organizational Hierarchy</h2>
-          <p className="text-muted-foreground max-w-2xl mx-auto">
-            Click on any role to learn more about the position and its responsibilities within Volt Consulting Group.
+    <section className="py-8">
+      <div>
+        <div className="text-center mb-10">
+          <h3 className="heading-sm text-foreground mb-2">Organizational Hierarchy</h3>
+          <p className="text-sm text-muted-foreground max-w-xl mx-auto">
+            Click on any role to learn more about the position and its responsibilities.
           </p>
         </div>
 
