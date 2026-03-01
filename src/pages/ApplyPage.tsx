@@ -6,6 +6,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { ChevronDown, ChevronRight, ChevronLeft, Clock } from 'lucide-react';
 import ApplyForm from '../components/ApplyForm';
 import { differenceInDays, differenceInHours, differenceInMinutes } from 'date-fns';
+import OrgHierarchyExplorer from '../components/OrgHierarchyExplorer';
 import { getPositions, PositionType } from '../services/supabaseService';
 
 // Fallback positions if none are found in MongoDB or localStorage
