@@ -6,6 +6,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { ChevronDown, ChevronRight, ChevronLeft, Clock } from 'lucide-react';
 import ApplyForm from '../components/ApplyForm';
 import { differenceInDays, differenceInHours, differenceInMinutes } from 'date-fns';
+import OrgHierarchyExplorer from '../components/OrgHierarchyExplorer';
 import { getPositions, PositionType } from '../services/supabaseService';
 
 // Fallback positions if none are found in MongoDB or localStorage
@@ -214,6 +215,8 @@ const ApplyPage = () => {
               <p className="text-volt-text/80 mb-8">
                 Explore our available positions and find the one that matches your skills and interests.
               </p>
+
+              <OrgHierarchyExplorer />
 
               <div className="space-y-4">
                 {voltPositions.length > 0 ? (
