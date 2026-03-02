@@ -223,16 +223,17 @@ const ApplyPage = () => {
                   voltPositions.map((position) => (
                     <Collapsible key={position.id} className="border border-gray-200 rounded-lg">
                         <CollapsibleTrigger className="flex justify-between items-center p-4 cursor-pointer w-full text-left">
-                        <div>
-                          <h3 className="font-semibold text-lg">{position.title}</h3>
-                          {countdowns[position.id] && (
-                            <div className="flex items-center gap-1 mt-1">
-                              <Clock size={14} className={countdowns[position.id]?.isNearDeadline ? 'text-red-600' : 'text-gray-500'} />
-                              <span className={`text-xs ${countdowns[position.id]?.isNearDeadline ? 'text-red-600 font-medium' : 'text-gray-500'}`}>
-                                {countdowns[position.id]?.text}
-                              </span>
-                            </div>
-                          )}
+                          <div>
+                            <h3 className="font-semibold text-lg">{position.title}</h3>
+                            {countdowns[position.id] && (
+                              <div className="flex items-center gap-1 mt-1">
+                                <Clock size={14} className={countdowns[position.id]?.isNearDeadline ? 'text-red-600' : 'text-gray-500'} />
+                                <span className={`text-xs ${countdowns[position.id]?.isNearDeadline ? 'text-red-600 font-medium' : 'text-gray-500'}`}>
+                                  {countdowns[position.id]?.text}
+                                </span>
+                              </div>
+                            )}
+                          </div>
                           <ChevronDown size={20} className="shrink-0" />
                         </CollapsibleTrigger>
                       <CollapsibleContent className="px-4 pb-4">
