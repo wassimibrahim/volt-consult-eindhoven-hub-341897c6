@@ -222,24 +222,22 @@ const ApplyPage = () => {
                 {voltPositions.length > 0 ? (
                   voltPositions.map((position) => (
                     <Collapsible key={position.id} className="border border-gray-200 rounded-lg">
-                      <div className="flex justify-between items-center p-4 cursor-pointer" onClick={() => handlePositionSelect(position)}>
-                        <div>
-                          <h3 className="font-semibold text-lg">{position.title}</h3>
-                          {countdowns[position.id] && (
-                            <div className="flex items-center gap-1 mt-1">
-                              <Clock size={14} className={countdowns[position.id]?.isNearDeadline ? 'text-red-600' : 'text-gray-500'} />
-                              <span className={`text-xs ${countdowns[position.id]?.isNearDeadline ? 'text-red-600 font-medium' : 'text-gray-500'}`}>
-                                {countdowns[position.id]?.text}
-                              </span>
-                            </div>
-                          )}
-                        </div>
-                        <CollapsibleTrigger className="hover:bg-gray-100 p-2 rounded-full">
-                          <ChevronDown size={20} />
+                        <CollapsibleTrigger className="flex justify-between items-center p-4 cursor-pointer w-full text-left">
+                          <div>
+                            <h3 className="font-semibold text-lg">{position.title}</h3>
+                            {countdowns[position.id] && (
+                              <div className="flex items-center gap-1 mt-1">
+                                <Clock size={14} className={countdowns[position.id]?.isNearDeadline ? 'text-red-600' : 'text-gray-500'} />
+                                <span className={`text-xs ${countdowns[position.id]?.isNearDeadline ? 'text-red-600 font-medium' : 'text-gray-500'}`}>
+                                  {countdowns[position.id]?.text}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                          <ChevronDown size={20} className="shrink-0" />
                         </CollapsibleTrigger>
-                      </div>
                       <CollapsibleContent className="px-4 pb-4">
-                        <p className="text-volt-text/80 mb-4">{position.description}</p>
+                        <p className="text-volt-text/80 mb-4 whitespace-pre-line">{position.description}</p>
                         {position.requirements && position.requirements.length > 0 && (
                           <div className="mb-4">
                             <h4 className="font-medium mb-2">Requirements:</h4>
@@ -294,7 +292,7 @@ const ApplyPage = () => {
                     <div className="space-y-4">
                       {project.positions.map((position) => (
                         <Collapsible key={position.id} className="border border-gray-200 rounded-lg">
-                          <div className="flex justify-between items-center p-4 cursor-pointer" onClick={() => handlePositionSelect(position)}>
+                          <CollapsibleTrigger className="flex justify-between items-center p-4 cursor-pointer w-full text-left">
                             <div>
                               <h3 className="font-semibold text-lg">{position.title}</h3>
                               {countdowns[position.id] && (
@@ -306,12 +304,10 @@ const ApplyPage = () => {
                                 </div>
                               )}
                             </div>
-                            <CollapsibleTrigger className="hover:bg-gray-100 p-2 rounded-full">
-                              <ChevronDown size={20} />
-                            </CollapsibleTrigger>
-                          </div>
+                            <ChevronDown size={20} className="shrink-0" />
+                          </CollapsibleTrigger>
                           <CollapsibleContent className="px-4 pb-4">
-                            <p className="text-volt-text/80 mb-4">{position.description}</p>
+                            <p className="text-volt-text/80 mb-4 whitespace-pre-line">{position.description}</p>
                             {position.preferredMajors && position.preferredMajors.length > 0 && (
                               <div className="mb-4">
                                 <h4 className="font-medium mb-2">Preferred Majors:</h4>
@@ -351,7 +347,7 @@ const ApplyPage = () => {
               </button>
               
               <h2 className="heading-md text-volt-dark mb-2">Apply for: {selectedPosition.title}</h2>
-              <p className="text-volt-text/80 mb-2">{selectedPosition.description}</p>
+              <p className="text-volt-text/80 mb-2 whitespace-pre-line">{selectedPosition.description}</p>
               
               {countdowns[selectedPosition.id] && (
                 <div className={`mb-6 p-3 rounded-md ${countdowns[selectedPosition.id]?.isNearDeadline ? 'bg-red-50' : 'bg-gray-50'}`}>
