@@ -239,7 +239,7 @@ const ApplyPage = () => {
                         </CollapsibleTrigger>
                       </div>
                       <CollapsibleContent className="px-4 pb-4">
-                        <p className="text-volt-text/80 mb-4">{position.description}</p>
+                        <p className="text-volt-text/80 mb-4 whitespace-pre-line">{position.description}</p>
                         {position.requirements && position.requirements.length > 0 && (
                           <div className="mb-4">
                             <h4 className="font-medium mb-2">Requirements:</h4>
@@ -311,7 +311,7 @@ const ApplyPage = () => {
                             </CollapsibleTrigger>
                           </div>
                           <CollapsibleContent className="px-4 pb-4">
-                            <p className="text-volt-text/80 mb-4">{position.description}</p>
+                            <p className="text-volt-text/80 mb-4 whitespace-pre-line">{position.description}</p>
                             {position.preferredMajors && position.preferredMajors.length > 0 && (
                               <div className="mb-4">
                                 <h4 className="font-medium mb-2">Preferred Majors:</h4>
@@ -351,7 +351,7 @@ const ApplyPage = () => {
               </button>
               
               <h2 className="heading-md text-volt-dark mb-2">Apply for: {selectedPosition.title}</h2>
-              <p className="text-volt-text/80 mb-2">{selectedPosition.description}</p>
+              <p className="text-volt-text/80 mb-2 whitespace-pre-line">{selectedPosition.description}</p>
               
               {countdowns[selectedPosition.id] && (
                 <div className={`mb-6 p-3 rounded-md ${countdowns[selectedPosition.id]?.isNearDeadline ? 'bg-red-50' : 'bg-gray-50'}`}>
