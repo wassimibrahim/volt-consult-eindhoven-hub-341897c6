@@ -349,37 +349,29 @@ export const saveApplication = async (application: {
     console.log('About to insert into applications table with anon key');
     
     // Use a direct insert without RLS checks for debugging
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from('applications')
-      .insert(applicationData)
-      .select()
-      .single();
+      .insert(applicationData);
     
     if (error) {
       console.error('Supabase insert error:', error);
       throw new Error(`Failed to save application: ${error.message}`);
     }
     
-    if (!data) {
-      throw new Error('No data returned after insert');
-    }
+    console.log('Successfully saved application');
     
-    console.log('Successfully saved application:', data);
-    
-    // Transform the data to match the expected format
+    // Return a constructed object since anon users cannot SELECT after insert
     return {
-      id: data.id,
-      fullName: data.full_name,
-      email: data.email,
-      position: data.position,
-      type: data.position_type as 'volt' | 'project',
-      date: data.application_date ? new Date(data.application_date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
-      status: data.status as 'pending' | 'reviewed' | 'accepted' | 'rejected',
+      id: crypto.randomUUID(),
+      fullName: applicationData.full_name,
+      email: applicationData.email,
+      position: applicationData.position,
+      type: applicationData.position_type as 'volt' | 'project',
+      date: new Date().toISOString().split('T')[0],
+      status: 'pending' as const,
       documents: ['CV', 'Motivation Letter'],
-      documentData: [data.cv_url, data.motivation_letter_url].filter(Boolean),
-      details: data.details as ApplicationType['details'] || {
-        birthDate: new Date().toISOString().split('T')[0],
-      }
+      documentData: [applicationData.cv_url, applicationData.motivation_letter_url].filter(Boolean) as string[],
+      details: applicationData.details as ApplicationType['details']
     };
   } catch (error: any) {
     console.error('Error saving application:', error);
@@ -444,26 +436,24 @@ export const saveContactMessage = async (message: { name: string; email: string;
     
     console.log('Saving contact message with data:', messageData);
 
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from('contact_messages')
-      .insert(messageData)
-      .select()
-      .single();
+      .insert(messageData);
     
     if (error) {
       console.error('Supabase insert error:', error);
       throw error;
     }
     
-    console.log('Successfully saved contact message:', data);
+    console.log('Successfully saved contact message');
     
-    // Transform the data to match the expected format
+    // Return a constructed object since anon users cannot SELECT after insert
     return {
-      id: data.id,
-      name: data.name,
-      email: data.email,
-      message: data.message,
-      date: data.created_at ? new Date(data.created_at).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]
+      id: crypto.randomUUID(),
+      name: messageData.name,
+      email: messageData.email,
+      message: messageData.message,
+      date: new Date().toISOString().split('T')[0]
     };
   } catch (error) {
     console.error('Error saving contact message:', error);
