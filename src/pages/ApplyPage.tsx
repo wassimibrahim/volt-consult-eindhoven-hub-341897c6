@@ -292,7 +292,7 @@ const ApplyPage = () => {
                     <div className="space-y-4">
                       {project.positions.map((position) => (
                         <Collapsible key={position.id} className="border border-gray-200 rounded-lg">
-                          <div className="flex justify-between items-center p-4 cursor-pointer" onClick={() => handlePositionSelect(position)}>
+                          <CollapsibleTrigger className="flex justify-between items-center p-4 cursor-pointer w-full text-left">
                             <div>
                               <h3 className="font-semibold text-lg">{position.title}</h3>
                               {countdowns[position.id] && (
@@ -304,10 +304,8 @@ const ApplyPage = () => {
                                 </div>
                               )}
                             </div>
-                            <CollapsibleTrigger className="hover:bg-gray-100 p-2 rounded-full">
-                              <ChevronDown size={20} />
-                            </CollapsibleTrigger>
-                          </div>
+                            <ChevronDown size={20} className="shrink-0" />
+                          </CollapsibleTrigger>
                           <CollapsibleContent className="px-4 pb-4">
                             <p className="text-volt-text/80 mb-4 whitespace-pre-line">{position.description}</p>
                             {position.preferredMajors && position.preferredMajors.length > 0 && (
